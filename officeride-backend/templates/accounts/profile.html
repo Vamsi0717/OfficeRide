@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">Your profile</h3>
+    <span class="badge text-bg-success">Email verified</span>
+  </div>
+  <p class="text-muted">{{ user.email }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form }}
+    <button class="btn btn-primary mt-3">Save profile</button>
+  </form>
+
+  <hr class="my-4">
+  <h5>Car owner documents</h5>
+  {% if not doc %}
+    <p class="text-muted">Not submitted. You need approved documents to offer rides.</p>
+  {% elif doc.status == "approved" %}
+    <p><span class="badge text-bg-success">Approved</span>
+      {% if doc.insurance_valid %}Insurance valid until {{ doc.insurance_expiry }}.{% else %}
+      <span class="text-danger">Insurance expired on {{ doc.insurance_expiry }}.</span>{% endif %}</p>
+  {% elif doc.status == "rejected" %}
+    <p><span class="badge text-bg-danger">Rejected</span> {{ doc.rejection_reason|default:"Please resubmit." }}</p>
+  {% else %}
+    <p><span class="badge text-bg-warning">Pending review</span></p>
+  {% endif %}
+  <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:documents' %}">
+    {% if doc %}Update documents{% else %}Submit documents{% endif %}
+  </a>
+{% endblock %}

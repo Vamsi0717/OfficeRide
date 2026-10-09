@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Verify your email</h3>
+  <p>We sent a 6-digit code to <strong>{{ user.email }}</strong>. It is valid for {{ expiry_minutes }} minutes.</p>
+  {% if dev_hint %}
+    <div class="alert alert-secondary small">
+      Development mode: the email is printed in the terminal where <code>runserver</code> is running.
+    </div>
+  {% endif %}
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    {{ form }}
+    <button class="btn btn-primary mt-3">Verify</button>
+  </form>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="resend" value="1">
+    <button class="btn btn-outline-secondary btn-sm"{% if wait %} disabled{% endif %}>
+      Send a new code{% if wait %} (available in {{ wait }}s, refresh the page){% endif %}
+    </button>
+  </form>
+{% endblock %}

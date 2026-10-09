@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Car owner documents</h3>
+  <p class="text-muted">Only needed if you want to offer rides. Files are private and seen only by the OfficeRide admin team.</p>
+
+  {% if doc.status == "approved" %}
+    <div class="alert alert-success">Approved. Changing any detail below sends your documents for review again.</div>
+  {% elif doc.status == "rejected" %}
+    <div class="alert alert-danger"><strong>Rejected.</strong> {{ doc.rejection_reason|default:"Please correct the details and resubmit." }}</div>
+  {% elif doc.status == "pending" %}
+    <div class="alert alert-warning">Pending review. We will approve them as soon as an admin has checked them.</div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+    {{ form }}
+    {% if doc %}
+      <p class="small text-muted mt-2">
+        On record:
+        {% if doc.licence_file %}licence &#10003;{% endif %}
+        {% if doc.rc_file %}&nbsp; RC &#10003;{% endif %}
+        {% if doc.insurance_file %}&nbsp; insurance &#10003;{% endif %}.
+        Choose a file again only if you want to replace it.
+      </p>
+    {% endif %}
+    <button class="btn btn-primary mt-2">{% if doc %}Update documents{% else %}Submit documents{% endif %}</button>
+  </form>
+{% endblock %}
