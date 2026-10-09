@@ -15,8 +15,27 @@
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="resend" value="1">
-    <button class="btn btn-outline-secondary btn-sm"{% if wait %} disabled{% endif %}>
-      Send a new code{% if wait %} (available in {{ wait }}s, refresh the page){% endif %}
+    <button id="resend-btn" class="btn btn-outline-secondary btn-sm" data-wait="{{ wait|default:0 }}"{% if wait %} disabled{% endif %}>
+      Send a new code{% if wait %} (available in <span id="resend-count">{{ wait }}</span>s){% endif %}
     </button>
   </form>
+  <script>
+    // Counts down the resend wait and enables the button at zero. The server still enforces the wait.
+    (function () {
+      var btn = document.getElementById("resend-btn");
+      var left = parseInt(btn.dataset.wait, 10) || 0;
+      if (left <= 0) return;
+      var label = document.getElementById("resend-count");
+      var timer = setInterval(function () {
+        left -= 1;
+        if (left <= 0) {
+          clearInterval(timer);
+          btn.disabled = false;
+          btn.textContent = "Send a new code";
+        } else {
+          label.textContent = left;
+        }
+      }, 1000);
+    })();
+  </script>
 {% endblock %}
