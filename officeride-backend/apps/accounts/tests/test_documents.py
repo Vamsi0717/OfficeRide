@@ -5,6 +5,8 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.signals import request_finished
+from django.db import close_old_connections
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -167,7 +169,13 @@ class StaffFileAccessTests(DocumentTestCase):
         response = self.client.get(self.file_url())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(b"".join(response.streaming_content), b"%PDF-1.4 test")
-        response.close()
+        # Closing a streaming response fires request_finished, which would close the test
+        # database connection on PostgreSQL. The test client does the same disconnect itself.
+        request_finished.disconnect(close_old_connections)
+        try:
+            response.close()
+        finally:
+            request_finished.connect(close_old_connections)
 
     def test_normal_user_cannot_open_a_document(self):
         self.assertEqual(self.client.get(self.file_url()).status_code, 404)
