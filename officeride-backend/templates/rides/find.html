@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Find a ride</h3>
+  <p class="text-muted">Anywhere in Bangalore. We match rides whose route passes near your pickup and drop.</p>
+  <form method="get" novalidate class="mb-4">
+    {% include "rides/_place_picker.html" with label="Pickup" name_field=form.pickup_name lat_field=form.pickup_lat lng_field=form.pickup_lng %}
+    {% include "rides/_place_picker.html" with label="Drop" name_field=form.drop_name lat_field=form.drop_lat lng_field=form.drop_lng %}
+    <div class="row">
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+        {{ form.date }}
+        {% for error in form.date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
+        {{ form.time }}
+        {% for error in form.time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary">Search</button>
+  </form>
+
+  {% if matches is not None %}
+    {% if matches %}
+      <h5>{{ matches|length }} ride{{ matches|length|pluralize }} found</h5>
+      {% for m in matches %}
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="fw-semibold">{{ m.ride.origin_name }} &rarr; {{ m.ride.destination_name }}</div>
+            <div>Leaves {{ m.ride.departure_time|time:"g:i A" }}
+              <span class="text-muted">({{ m.time_diff_min }} min from your time)</span></div>
+            <div class="small text-muted mt-1">
+              Runs {{ m.ride.office_days_display }} &middot; {{ m.ride.seats }} seat{{ m.ride.seats|pluralize }} &middot; {{ m.ride.car_model }}
+              &middot; Driver {{ m.ride.driver.first_name }} {{ m.ride.driver.last_name|slice:":1" }}
+            </div>
+            <div class="small mt-2">
+              Your trip on this ride: about {{ m.rider_km }} km.
+              Pickup is {{ m.pickup_offset_km }} km and drop is {{ m.drop_offset_km }} km from the route.
+            </div>
+            <a class="btn btn-sm btn-outline-primary mt-2" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-secondary">
+        No rides match yet. We look for rides leaving within {{ window }} minutes of your time, going your way, that pass within 1.5 km of both places.
+        Try another time or day.
+      </div>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script>{% endblock %}

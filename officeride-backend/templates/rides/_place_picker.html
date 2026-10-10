@@ -1,0 +1,7 @@
+<div class="mb-3" data-place-picker data-search-url="{% url 'rides:places_search' %}">
+  <label class="form-label">{{ label }}</label>
+  <input type="text" class="form-control place-input" placeholder="Type at least 3 letters of a place, area or tech park" autocomplete="off">
+  {{ name_field }}{{ lat_field }}{{ lng_field }}
+  <div class="list-group place-results mt-1"></div>
+  {% for error in name_field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+</div>

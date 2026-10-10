@@ -9,8 +9,11 @@
 <body>
 <nav class="navbar navbar-dark bg-dark px-3">
   <a class="navbar-brand" href="{% url 'home' %}">OfficeRide</a>
-  <div class="d-flex gap-2 align-items-center">
+  <div class="d-flex gap-2 align-items-center flex-wrap">
     {% if user.is_authenticated %}
+      <a class="btn btn-sm btn-outline-light" href="{% url 'rides:find' %}">Find a ride</a>
+      <a class="btn btn-sm btn-outline-light" href="{% url 'rides:offer' %}">Offer a ride</a>
+      <a class="btn btn-sm btn-outline-light" href="{% url 'rides:mine' %}">My rides</a>
       <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:profile' %}">Profile</a>
       <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:documents' %}">Documents</a>
       <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
@@ -29,5 +32,6 @@
   {% endfor %}
   {% block content %}{% endblock %}
 </div>
+{% block scripts %}{% endblock %}
 </body>
 </html>

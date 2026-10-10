@@ -3,7 +3,9 @@
   <h3>OfficeRide</h3>
   <p>Share your commute, split the cost.</p>
   {% if user.is_authenticated %}
-    <a class="btn btn-primary" href="{% url 'accounts:profile' %}">Go to my profile</a>
+    <a class="btn btn-primary" href="{% url 'rides:find' %}">Find a ride</a>
+    <a class="btn btn-outline-primary" href="{% url 'rides:offer' %}">Offer a ride</a>
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:profile' %}">My profile</a>
   {% else %}
     <a class="btn btn-primary" href="{% url 'accounts:register' %}">Create an account</a>
     <a class="btn btn-outline-secondary" href="{% url 'accounts:login' %}">Log in</a>

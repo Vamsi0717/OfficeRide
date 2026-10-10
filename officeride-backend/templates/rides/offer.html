@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Offer a ride</h3>
+  <p class="text-muted">Share the commute you already make. Riders pay a share of the running cost, not a taxi fare.</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    {% include "rides/_place_picker.html" with label="Start (where you leave from)" name_field=form.origin_name lat_field=form.origin_lat lng_field=form.origin_lng %}
+    {% include "rides/_place_picker.html" with label="End (your office or tech park)" name_field=form.destination_name lat_field=form.destination_lat lng_field=form.destination_lng %}
+
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.departure_time.id_for_label }}">{{ form.departure_time.label }}</label>
+      {{ form.departure_time }}
+      {% for error in form.departure_time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label d-block">{{ form.office_days.label }}</label>
+      {% for box in form.office_days %}
+        <div class="form-check form-check-inline">
+          {{ box.tag }}<label class="form-check-label" for="{{ box.id_for_label }}">{{ box.choice_label }}</label>
+        </div>
+      {% endfor %}
+      {% for error in form.office_days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+
+    <div class="row">
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.seats.id_for_label }}">{{ form.seats.label }}</label>
+        {{ form.seats }}
+        {% for error in form.seats.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.car_model.id_for_label }}">{{ form.car_model.label }}</label>
+        {{ form.car_model }}
+        {% for error in form.car_model.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+
+    <div class="form-check mb-2">
+      {{ form.offer_return }}
+      <label class="form-check-label" for="{{ form.offer_return.id_for_label }}">{{ form.offer_return.label }}</label>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.return_time.id_for_label }}">{{ form.return_time.label }}</label>
+      {{ form.return_time }}
+      {% for error in form.return_time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+
+    <button class="btn btn-primary">Publish ride</button>
+  </form>
+{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script>{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>{{ ride.origin_name }} &rarr; {{ ride.destination_name }}</h3>
+  {% if not ride.is_active %}<div class="alert alert-secondary">This ride is switched off.</div>{% endif %}
+  <dl class="row">
+    <dt class="col-5">Leaves</dt><dd class="col-7">{{ ride.departure_time|time:"g:i A" }}</dd>
+    <dt class="col-5">Runs on</dt><dd class="col-7">{{ ride.office_days_display }}</dd>
+    <dt class="col-5">Seats offered</dt><dd class="col-7">{{ ride.seats }}</dd>
+    <dt class="col-5">Car</dt><dd class="col-7">{{ ride.car_model }}</dd>
+    <dt class="col-5">Route</dt><dd class="col-7">{{ ride.distance_km }} km, about {{ ride.duration_min }} min</dd>
+    <dt class="col-5">Driver</dt><dd class="col-7">{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}. <span class="badge text-bg-success">Documents verified</span></dd>
+  </dl>
+  <p class="text-muted small">Requesting a seat and the fare breakdown arrive in the next phases.</p>
+  {% if is_owner %}
+    <form method="post" action="{% url 'rides:toggle' ride.pk %}">
+      {% csrf_token %}
+      <button class="btn btn-outline-secondary">{% if ride.is_active %}Switch off{% else %}Switch on{% endif %}</button>
+    </form>
+  {% endif %}
+  <a class="d-block mt-3" href="{% url 'rides:find' %}">Back to search</a>
+{% endblock %}

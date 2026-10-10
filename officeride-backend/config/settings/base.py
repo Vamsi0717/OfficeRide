@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.accounts",
     "apps.core",
+    "apps.rides",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -114,3 +115,19 @@ DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "OfficeRide <no-reply@offic
 OTP_EXPIRY_MINUTES = 10
 OTP_MAX_ATTEMPTS = 5
 OTP_RESEND_SECONDS = 60
+
+# Maps and rides (Phase 3)
+# "fake" works offline with sample Bangalore places. "google" needs GOOGLE_MAPS_API_KEY.
+MAPS_PROVIDER = os.getenv("MAPS_PROVIDER", "fake")
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+MAPS_TIMEOUT_SECONDS = 8
+# Rides must start and end inside this box, which covers all of Bangalore.
+BANGALORE_BOUNDS = {"south": 12.70, "west": 77.35, "north": 13.25, "east": 77.85}
+BANGALORE_CENTER = (12.9716, 77.5946)
+
+MAX_SEATS = 6
+RIDE_MIN_DISTANCE_M = 1000      # start and end must be at least this far apart
+MATCH_RADIUS_M = 1500           # rider's pickup and drop must be within this of the driver's route
+MATCH_TIME_WINDOW_MIN = 15      # departure may differ from the rider's time by this many minutes
+MATCH_MIN_TRIP_M = 500          # shortest shared stretch worth showing
+PLACE_SEARCH_PER_MINUTE = 30    # place searches per user per minute (protects the maps bill)

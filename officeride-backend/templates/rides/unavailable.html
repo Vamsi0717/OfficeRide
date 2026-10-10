@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Days my car is not available</h3>
+  <p class="text-muted">Service, repair or leave. Your rides are hidden from search on these days.</p>
+  <form method="post" class="mb-4" novalidate>
+    {% csrf_token %}
+    <div class="row g-2 align-items-end">
+      <div class="col-5">
+        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+        {{ form.date }}
+      </div>
+      <div class="col-5">
+        <label class="form-label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+        {{ form.reason }}
+      </div>
+      <div class="col-2"><button class="btn btn-primary w-100">Add</button></div>
+    </div>
+    {% for error in form.date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    {% for error in form.reason.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  </form>
+  <ul class="list-group">
+    {% for item in dates %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span>{{ item.date|date:"D, j M Y" }}{% if item.reason %} <span class="text-muted">&middot; {{ item.reason }}</span>{% endif %}</span>
+        <form method="post" action="{% url 'rides:unavailable_delete' item.pk %}" class="m-0">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger">Remove</button>
+        </form>
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted">No upcoming dates.</li>
+    {% endfor %}
+  </ul>
+  <a class="d-block mt-3" href="{% url 'rides:mine' %}">Back to my rides</a>
+{% endblock %}
