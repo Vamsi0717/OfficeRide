@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from apps.accounts.models import VehicleType
+from apps.fares.engine import MAX_ADJUSTMENT_RS
 
 WEEKDAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat"), (6, "Sun")]
 
@@ -31,6 +32,8 @@ class Ride(models.Model):
         "fares.MileageRate", null=True, blank=True, on_delete=models.PROTECT, related_name="rides",
     )
     toll_total = models.PositiveIntegerField(default=0, help_text="Toll for the whole trip in rupees, split between the seats.")
+    # Rupees the driver moves each rider's fare by, up or down. Never more than MAX_ADJUSTMENT_RS.
+    fare_adjustment = models.SmallIntegerField(default=0, help_text="Rupees added to (or taken off) each rider's fare.")
 
     # The driving route from the maps service, kept so searches need no map calls.
     route_points = models.JSONField(default=list)
@@ -50,6 +53,10 @@ class Ride(models.Model):
         constraints = [
             models.CheckConstraint(condition=Q(seats__gte=1) & Q(seats__lte=6), name="ride_seats_1_to_6"),
             models.CheckConstraint(condition=~Q(vehicle_type="bike") | Q(seats=1), name="two_wheeler_has_one_seat"),
+            models.CheckConstraint(
+                condition=Q(fare_adjustment__gte=-MAX_ADJUSTMENT_RS) & Q(fare_adjustment__lte=MAX_ADJUSTMENT_RS),
+                name="fare_adjustment_within_limit",
+            ),
         ]
 
     def __str__(self):

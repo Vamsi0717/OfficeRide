@@ -41,6 +41,7 @@ def fare_for(ride, rider_distance_m=None, rates=None):
         seats=ride.seats,
         rider_km=Decimal(rider_m) / 1000,
         toll_total=ride.toll_total,
+        adjustment=ride.fare_adjustment,
     )
 
 

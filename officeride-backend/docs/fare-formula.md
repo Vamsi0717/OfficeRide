@@ -26,9 +26,21 @@ For one rider on one ride:
 3. The parts shown on screen (fuel, wear, toll) are rounded to the paisa for display only. They can differ from the total by a few paise.
 4. **Safety cap:** the fare is never more than `(cost per km x rider km + toll) / seats offered`, rounded down. This stops rounding from ever pushing the riders above the real cost of the trip.
 
+## Driver adjustment
+
+The driver may move the fare up or down by up to **₹20 per rider** (`MAX_ADJUSTMENT_RS` in `apps/fares/engine.py`).
+
+- The adjustment is added to the rounded standard fare, after the safety cap.
+- It is a whole-rupee amount and is the same for every rider on that ride, however far they travel.
+- A fare is never below ₹0.
+- The ride page shows the standard fare and says how much the driver changed it.
+- The database refuses any value outside -20 to +20.
+
+Example: standard fare ₹67 and the driver sets +20, so riders pay **₹87**. With -20 they pay **₹47**.
+
 ## The promise
 
-With every seat filled and every rider travelling the full route, the riders together never pay more than petrol + wear + toll for the trip. The tests check this for cars and two-wheelers, 1 to 6 seats, short and long trips, with and without toll.
+With no adjustment, with every seat filled and every rider travelling the full route, the riders together never pay more than petrol + wear + toll for the trip. The tests check this for cars and two-wheelers, 1 to 6 seats, short and long trips, with and without toll. A driver who raises the fare (up to ₹20 per rider) can take the total above the trip cost. That is the driver's choice, and the ride page says so.
 
 ## Worked examples
 

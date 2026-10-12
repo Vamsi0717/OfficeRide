@@ -4,7 +4,11 @@
     <div class="text-muted">
       Fuel &#8377;{{ fare.fuel|floatformat:2 }} &middot; Wear and tear &#8377;{{ fare.wear|floatformat:2 }}{% if fare.toll %} &middot; Toll &#8377;{{ fare.toll|floatformat:2 }}{% endif %}
     </div>
-    <div class="text-muted">Riders never pay more than the trip cost.</div>
+    {% if fare.adjustment %}
+      <div class="text-muted">Standard fare &#8377;{{ fare.base_total }}. The driver set it &#8377;{% if fare.adjustment > 0 %}{{ fare.adjustment }} higher{% else %}{{ fare.adjustment_abs }} lower{% endif %}.</div>
+    {% else %}
+      <div class="text-muted">Riders never pay more than the trip cost.</div>
+    {% endif %}
   </div>
 {% else %}
   <div class="small text-muted mt-2">Fare not available for this ride yet.</div>

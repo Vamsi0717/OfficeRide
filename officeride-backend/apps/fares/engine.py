@@ -11,6 +11,10 @@ For one rider on one ride:
 
 Because every seat pays only its share of at most 90% of the cost, riders together never pay
 more than fuel + wear + toll. See docs/fare-formula.md.
+
+Driver adjustment: the driver may move the fare up or down by up to MAX_ADJUSTMENT_RS rupees per
+rider. It is added to the rounded fare after the safety cap, and the result is never below zero.
+An adjustment above zero can take riders above the trip cost. That is the driver's choice.
 """
 
 from dataclasses import dataclass
@@ -19,6 +23,7 @@ from decimal import ROUND_FLOOR, ROUND_HALF_UP, Decimal
 HUNDRED = Decimal("100")
 ONE_RUPEE = Decimal("1")
 PAISE = Decimal("0.01")
+MAX_ADJUSTMENT_RS = 20  # the most a driver can move the fare, up or down, per rider
 
 
 def _d(value):
@@ -31,9 +36,15 @@ class FareBreakdown:
     fuel: Decimal          # rider's share of fuel, to the paisa
     wear: Decimal          # rider's share of wear and tear, to the paisa
     toll: Decimal          # rider's share of toll, to the paisa
-    total: int             # what the rider pays: the three parts added, rounded once to whole rupees
+    total: int             # what the rider pays: the standard fare plus the driver's adjustment
     cost_per_km: Decimal   # whole-vehicle running cost per km (fuel + wear), before recovery
     rider_km: Decimal      # distance the fare was worked out for
+    base_total: int = 0    # the standard fare before the driver's adjustment
+    adjustment: int = 0    # rupees the driver moved the fare by (after the floor at zero)
+
+    @property
+    def adjustment_abs(self):
+        return abs(self.adjustment)
 
 
 def cost_per_km(fuel_price, km_per_litre, wear_per_km):
@@ -45,7 +56,7 @@ def cost_per_km(fuel_price, km_per_litre, wear_per_km):
 
 
 def fare_breakdown(*, fuel_price, km_per_litre, wear_per_km, recovery_percent, seats, rider_km,
-                   toll_total=0, route_km=None):
+                   toll_total=0, route_km=None, adjustment=0):
     """Everything about one rider's fare. rider_km is capped at route_km when route_km is given."""
     seats = int(seats)
     if seats < 1:
@@ -61,6 +72,9 @@ def fare_breakdown(*, fuel_price, km_per_litre, wear_per_km, recovery_percent, s
         raise ValueError("toll cannot be negative")
     if route_km is not None:
         rider_km = min(rider_km, _d(route_km))
+    adjustment = int(adjustment)
+    if abs(adjustment) > MAX_ADJUSTMENT_RS:
+        raise ValueError(f"adjustment must be between -{MAX_ADJUSTMENT_RS} and {MAX_ADJUSTMENT_RS}")
 
     recovery = recovery_percent / HUNDRED
     wear_per_km = _d(wear_per_km)
@@ -74,7 +88,8 @@ def fare_breakdown(*, fuel_price, km_per_litre, wear_per_km, recovery_percent, s
     # Rounding up must never push the riders above the real cost. The 10% margin covers this on
     # normal trips, but a very short trip with many seats and a toll could overshoot by a rupee.
     cap = ((per_km * rider_km + toll_total) / seats).to_integral_value(rounding=ROUND_FLOOR)
-    total = int(min(total, cap))
+    base_total = int(min(total, cap))
+    total = max(0, base_total + adjustment)  # a fare is never negative
     return FareBreakdown(
         fuel=fuel.quantize(PAISE, rounding=ROUND_HALF_UP),
         wear=wear.quantize(PAISE, rounding=ROUND_HALF_UP),
@@ -82,6 +97,8 @@ def fare_breakdown(*, fuel_price, km_per_litre, wear_per_km, recovery_percent, s
         total=total,
         cost_per_km=per_km,
         rider_km=rider_km,
+        base_total=base_total,
+        adjustment=total - base_total,
     )
 
 

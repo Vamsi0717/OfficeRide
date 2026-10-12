@@ -7,6 +7,7 @@ from django.utils import timezone
 from apps.core.forms import BootstrapFormMixin
 
 from . import geo
+from apps.fares.engine import MAX_ADJUSTMENT_RS
 from apps.fares.models import MileageRate
 
 from .models import WEEKDAYS
@@ -69,6 +70,11 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
         label="Toll for the whole trip in ₹ (if any)", min_value=0, max_value=settings.FARE_MAX_TOLL_RS,
         required=False, initial=0, help_text="Split between the seats.",
     )
+    fare_adjustment = forms.IntegerField(
+        label="Change the fare by ₹ (optional)", min_value=-MAX_ADJUSTMENT_RS, max_value=MAX_ADJUSTMENT_RS,
+        required=False, initial=0,
+        help_text=f"Each rider pays this much more (plus) or less (minus) than the standard fare. Between -{MAX_ADJUSTMENT_RS} and {MAX_ADJUSTMENT_RS}.",
+    )
     has_spare_helmet = forms.BooleanField(label="I will carry a spare helmet for the rider", required=False)
     offer_return = forms.BooleanField(label="Also offer the way back", required=False)
     return_time = forms.TimeField(label="Leaving for the way back at", required=False, widget=_time_widget())
@@ -92,6 +98,9 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
 
     def clean_toll_total(self):
         return self.cleaned_data.get("toll_total") or 0
+
+    def clean_fare_adjustment(self):
+        return self.cleaned_data.get("fare_adjustment") or 0
 
     def clean(self):
         cleaned = super().clean()
