@@ -27,19 +27,19 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(DriverDocument)
 class DriverDocumentAdmin(admin.ModelAdmin):
-    list_display = ("user", "status", "insurance_expiry", "submitted_at", "reviewed_by")
-    list_filter = ("status",)
+    list_display = ("user", "vehicle_type", "status", "insurance_expiry", "submitted_at", "reviewed_by")
+    list_filter = ("status", "vehicle_type")
     search_fields = ("user__email", "licence_number", "rc_number")
     ordering = ("status", "-updated_at")
     actions = ["approve_documents"]
 
     fields = (
-        "user", "licence_number", "licence_link", "rc_number", "rc_link",
+        "user", "vehicle_type", "licence_number", "licence_link", "rc_number", "rc_link",
         "insurance_expiry", "insurance_link",
         "status", "rejection_reason", "submitted_at", "updated_at", "reviewed_by", "reviewed_at",
     )
     readonly_fields = (
-        "user", "licence_number", "licence_link", "rc_number", "rc_link",
+        "user", "vehicle_type", "licence_number", "licence_link", "rc_number", "rc_link",
         "insurance_expiry", "insurance_link", "submitted_at", "updated_at", "reviewed_by", "reviewed_at",
     )
 

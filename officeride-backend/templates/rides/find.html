@@ -17,6 +17,10 @@
         {% for error in form.time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
       </div>
     </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.vehicle.id_for_label }}">{{ form.vehicle.label }}</label>
+      {{ form.vehicle }}
+    </div>
     <button class="btn btn-primary">Search</button>
   </form>
 
@@ -30,7 +34,7 @@
             <div>Leaves {{ m.ride.departure_time|time:"g:i A" }}
               <span class="text-muted">({{ m.time_diff_min }} min from your time)</span></div>
             <div class="small text-muted mt-1">
-              Runs {{ m.ride.office_days_display }} &middot; {{ m.ride.seats }} seat{{ m.ride.seats|pluralize }} &middot; {{ m.ride.car_model }}
+              {{ m.ride.get_vehicle_type_display }} &middot; Runs {{ m.ride.office_days_display }} &middot; {{ m.ride.seats }} seat{{ m.ride.seats|pluralize }} &middot; {{ m.ride.car_model }}{% if m.ride.is_bike %} &middot; spare helmet carried{% endif %}
               &middot; Driver {{ m.ride.driver.first_name }} {{ m.ride.driver.last_name|slice:":1" }}
             </div>
             <div class="small mt-2">

@@ -13,11 +13,11 @@
   </form>
 
   <hr class="my-4">
-  <h5>Car owner documents</h5>
+  <h5>Driver documents</h5>
   {% if not doc %}
     <p class="text-muted">Not submitted. You need approved documents to offer rides.</p>
   {% elif doc.status == "approved" %}
-    <p><span class="badge text-bg-success">Approved</span>
+    <p><span class="badge text-bg-success">Approved</span> {{ doc.get_vehicle_type_display }}.
       {% if doc.insurance_valid %}Insurance valid until {{ doc.insurance_expiry }}.{% else %}
       <span class="text-danger">Insurance expired on {{ doc.insurance_expiry }}.</span>{% endif %}</p>
   {% elif doc.status == "rejected" %}

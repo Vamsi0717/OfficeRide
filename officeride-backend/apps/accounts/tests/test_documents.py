@@ -45,6 +45,7 @@ class DocumentTestCase(TestCase):
 
     def payload(self, **overrides):
         data = {
+            "vehicle_type": "car",
             "licence_number": "ka01 20110012345",
             "licence_file": pdf("licence.pdf"),
             "rc_number": "KA01AB1234",
@@ -74,6 +75,17 @@ class SubmitDocumentsTests(DocumentTestCase):
             self.assertTrue(field.name.endswith(".pdf"))
             self.assertTrue(default_storage.exists(field.name))
         self.assertNotIn("licence", doc.licence_file.name)  # original name is not kept
+
+    def test_two_wheeler_documents_are_saved_with_their_vehicle_type(self):
+        self.submit(vehicle_type="bike")
+        doc = DriverDocument.objects.get(user=self.user)
+        self.assertEqual(doc.vehicle_type, "bike")
+        self.assertEqual(User.objects.get(pk=self.user.pk).offered_vehicle_type, "bike")
+
+    def test_unknown_vehicle_type_is_rejected(self):
+        response = self.submit(vehicle_type="truck")
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(DriverDocument.objects.exists())
 
     def test_expired_insurance_is_rejected(self):
         response = self.submit(insurance_expiry=(timezone.localdate() - timedelta(days=1)).isoformat())
@@ -117,6 +129,7 @@ class ResubmitDocumentsTests(DocumentTestCase):
 
     def same_values(self, **overrides):
         data = {
+            "vehicle_type": self.doc.vehicle_type,
             "licence_number": self.doc.licence_number,
             "rc_number": self.doc.rc_number,
             "insurance_expiry": self.doc.insurance_expiry.isoformat(),
@@ -128,6 +141,12 @@ class ResubmitDocumentsTests(DocumentTestCase):
         self.client.post(self.url, self.same_values())
         self.doc.refresh_from_db()
         self.assertEqual(self.doc.status, DriverDocument.Status.APPROVED)
+
+    def test_changing_the_vehicle_type_sends_documents_back_for_review(self):
+        self.client.post(self.url, self.same_values(vehicle_type="bike"))
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.vehicle_type, "bike")
+        self.assertEqual(self.doc.status, DriverDocument.Status.PENDING)
 
     def test_changed_number_sends_documents_back_for_review(self):
         self.client.post(self.url, self.same_values(rc_number="KA05XY9999"))

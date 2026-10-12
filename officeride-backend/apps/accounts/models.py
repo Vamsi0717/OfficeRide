@@ -60,6 +60,12 @@ class User(AbstractUser):
         doc = getattr(self, "driver_document", None)  # missing relation raises an AttributeError subclass
         return bool(doc and doc.is_usable)
 
+    @property
+    def offered_vehicle_type(self):
+        """'car' or 'bike' from the driver's documents, or None when no documents were submitted."""
+        doc = getattr(self, "driver_document", None)
+        return doc.vehicle_type if doc else None
+
 
 class EmailOTP(models.Model):
     """One-time code sent to a user's email. Only a hash of the code is stored."""
@@ -95,6 +101,11 @@ def driver_doc_path(instance, filename):
     return f"driver_docs/user_{instance.user_id}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
 
 
+class VehicleType(models.TextChoices):
+    CAR = "car", "Car"
+    BIKE = "bike", "Two-wheeler"
+
+
 class DriverDocument(models.Model):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending review"
@@ -102,6 +113,7 @@ class DriverDocument(models.Model):
         REJECTED = "rejected", "Rejected"
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="driver_document")
+    vehicle_type = models.CharField(max_length=10, choices=VehicleType.choices, default=VehicleType.CAR)
     licence_number = models.CharField(max_length=30)
     licence_file = models.FileField(upload_to=driver_doc_path, validators=[validate_document_file])
     rc_number = models.CharField("vehicle RC number", max_length=30)

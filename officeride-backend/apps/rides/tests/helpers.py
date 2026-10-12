@@ -34,7 +34,7 @@ def make_user(email="user@acme.com", verified=True, **extra):
     return User.objects.create_user(email, "S3cure-pass!", **values)
 
 
-def make_driver(email="driver@acme.com", approved=True, insurance_days=200):
+def make_driver(email="driver@acme.com", approved=True, insurance_days=200, vehicle_type="car"):
     user = make_user(email, first_name="Ravi", last_name="Kumar")
     DriverDocument.objects.create(
         user=user,
@@ -42,6 +42,7 @@ def make_driver(email="driver@acme.com", approved=True, insurance_days=200):
         rc_number="KA01AB1234", rc_file="driver_docs/x/r.pdf",
         insurance_expiry=timezone.localdate() + timedelta(days=insurance_days), insurance_file="driver_docs/x/i.pdf",
         status=DriverDocument.Status.APPROVED if approved else DriverDocument.Status.PENDING,
+        vehicle_type=vehicle_type,
     )
     return User.objects.get(pk=user.pk)  # fresh copy, no cached relations
 

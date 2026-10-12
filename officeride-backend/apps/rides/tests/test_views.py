@@ -127,6 +127,74 @@ class OfferRideTests(TestCase):
         self.assertFalse(Ride.objects.exists())
 
 
+class TwoWheelerTests(TestCase):
+    def setUp(self):
+        self.biker = make_driver("biker@acme.com", vehicle_type="bike")
+        self.client.force_login(self.biker)
+        self.url = reverse("rides:offer")
+
+    def test_page_shows_the_vehicle_and_the_helmet_question(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "Two-wheeler")
+        self.assertContains(response, "spare helmet")
+        self.assertContains(response, "A two-wheeler carries one rider")
+
+    def test_two_wheeler_ride_has_one_seat_whatever_is_posted(self):
+        self.client.post(self.url, offer_payload(seats="3", has_spare_helmet="on", car_model="Honda Activa"))
+        ride = Ride.objects.get()
+        self.assertEqual((ride.vehicle_type, ride.seats, ride.has_spare_helmet), ("bike", 1, True))
+        self.assertTrue(ride.is_bike)
+
+    def test_spare_helmet_is_required(self):
+        response = self.client.post(self.url, offer_payload(car_model="Honda Activa"))
+        self.assertContains(response, "Riders must wear a helmet")
+        self.assertFalse(Ride.objects.exists())
+
+    def test_way_back_is_also_a_two_wheeler_ride(self):
+        self.client.post(self.url, offer_payload(has_spare_helmet="on", offer_return="on", return_time="18:00"))
+        self.assertEqual(list(Ride.objects.values_list("vehicle_type", "seats")), [("bike", 1), ("bike", 1)])
+
+    def test_car_driver_gets_a_car_ride_and_no_helmet_question(self):
+        self.client.force_login(make_driver("cardriver@acme.com"))
+        self.assertNotContains(self.client.get(self.url), "spare helmet")
+        self.client.post(self.url, offer_payload(seats="2"))
+        ride = Ride.objects.get()
+        self.assertEqual((ride.vehicle_type, ride.seats, ride.has_spare_helmet), ("car", 2, False))
+
+    def test_database_refuses_a_two_wheeler_with_two_seats(self):
+        from django.db import IntegrityError, transaction
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            make_ride(self.biker, vehicle_type="bike", seats=2)
+
+    def test_search_filter_and_labels(self):
+        make_ride(self.biker, vehicle_type="bike", seats=1, has_spare_helmet=True, car_model="Honda Activa")
+        make_ride(make_driver("car@acme.com"), car_model="Maruti Swift")
+        rider = make_user("rider@acme.com")
+        self.client.force_login(rider)
+        pickup, drop = point_along(0.2, 300), point_along(0.8, -200)
+        params = {
+            "pickup_name": "A", "pickup_lat": pickup[0], "pickup_lng": pickup[1],
+            "drop_name": "B", "drop_lat": drop[0], "drop_lng": drop[1],
+            "date": next_weekday(0).isoformat(), "time": "09:00",
+        }
+        both = self.client.get(reverse("rides:find"), params)
+        self.assertContains(both, "2 rides found")
+        self.assertContains(both, "spare helmet carried")
+        bikes = self.client.get(reverse("rides:find"), {**params, "vehicle": "bike"})
+        self.assertContains(bikes, "1 ride found")
+        self.assertContains(bikes, "Honda Activa")
+        self.assertNotContains(bikes, "Maruti Swift")
+        cars = self.client.get(reverse("rides:find"), {**params, "vehicle": "car"})
+        self.assertContains(cars, "Maruti Swift")
+        self.assertNotContains(cars, "Honda Activa")
+
+    def test_detail_page_mentions_the_helmet(self):
+        ride = make_ride(self.biker, vehicle_type="bike", seats=1, has_spare_helmet=True)
+        self.client.force_login(make_user("rider@acme.com"))
+        self.assertContains(self.client.get(reverse("rides:detail", args=[ride.pk])), "carries a spare one")
+
+
 class MyRidesTests(TestCase):
     def setUp(self):
         self.driver = make_driver()
@@ -318,6 +386,11 @@ class ModelTests(TestCase):
         self.assertEqual(ride.office_days_display, "Mon, Wed, Fri")
         self.assertTrue(ride.runs_on(next_weekday(2)))
         self.assertFalse(ride.runs_on(next_weekday(1)))
+
+    def test_offered_vehicle_type_comes_from_the_documents(self):
+        self.assertEqual(make_driver("c@acme.com").offered_vehicle_type, "car")
+        self.assertEqual(make_driver("b@acme.com", vehicle_type="bike").offered_vehicle_type, "bike")
+        self.assertIsNone(make_user("none@acme.com").offered_vehicle_type)
 
     def test_seats_constraint(self):
         from django.db import IntegrityError, transaction

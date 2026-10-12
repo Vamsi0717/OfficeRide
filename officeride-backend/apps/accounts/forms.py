@@ -89,9 +89,11 @@ class DriverDocumentForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = DriverDocument
         fields = (
-            "licence_number", "licence_file", "rc_number", "rc_file", "insurance_expiry", "insurance_file",
+            "vehicle_type", "licence_number", "licence_file", "rc_number", "rc_file", "insurance_expiry",
+            "insurance_file",
         )
         labels = {
+            "vehicle_type": "Vehicle you will offer rides in",
             "licence_number": "Driving licence number",
             "licence_file": "Driving licence (PDF, JPG or PNG)",
             "rc_number": "Vehicle RC number",

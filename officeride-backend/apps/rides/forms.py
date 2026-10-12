@@ -58,13 +58,25 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
         error_messages={"required": "Choose at least one day."},
     )
     seats = forms.IntegerField(label="Seats you can offer", min_value=1, max_value=settings.MAX_SEATS, initial=3)
-    car_model = forms.CharField(label="Car (make and model)", max_length=60)
+    car_model = forms.CharField(label="Vehicle (make and model)", max_length=60)
+    has_spare_helmet = forms.BooleanField(label="I will carry a spare helmet for the rider", required=False)
     offer_return = forms.BooleanField(label="Also offer the way back", required=False)
     return_time = forms.TimeField(label="Leaving for the way back at", required=False, widget=_time_widget())
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, vehicle_type="car", **kwargs):
         super().__init__(*args, **kwargs)
+        self.vehicle_type = vehicle_type
         self.fields["office_days"].widget.attrs["class"] = "form-check-input"
+        if vehicle_type == "bike":
+            # A two-wheeler carries one rider, and the rider must wear a helmet.
+            self.fields["seats"].initial = 1
+            self.fields["seats"].disabled = True
+            self.fields["has_spare_helmet"].required = True
+            self.fields["has_spare_helmet"].error_messages["required"] = (
+                "Riders must wear a helmet. Confirm that you carry a spare one."
+            )
+        else:
+            del self.fields["has_spare_helmet"]
 
     def clean(self):
         cleaned = super().clean()
@@ -92,6 +104,11 @@ class SearchForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
 
     date = forms.DateField(label="Date", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
     time = forms.TimeField(label="Around", widget=_time_widget())
+    vehicle = forms.ChoiceField(
+        label="Vehicle",
+        required=False,
+        choices=[("", "Car or two-wheeler"), ("car", "Car only"), ("bike", "Two-wheeler only")],
+    )
 
     def clean_date(self):
         value = self.cleaned_data["date"]

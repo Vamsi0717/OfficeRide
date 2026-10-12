@@ -6,7 +6,8 @@
     <dt class="col-5">Leaves</dt><dd class="col-7">{{ ride.departure_time|time:"g:i A" }}</dd>
     <dt class="col-5">Runs on</dt><dd class="col-7">{{ ride.office_days_display }}</dd>
     <dt class="col-5">Seats offered</dt><dd class="col-7">{{ ride.seats }}</dd>
-    <dt class="col-5">Car</dt><dd class="col-7">{{ ride.car_model }}</dd>
+    <dt class="col-5">Vehicle</dt><dd class="col-7">{{ ride.get_vehicle_type_display }}: {{ ride.car_model }}</dd>
+    {% if ride.is_bike %}<dt class="col-5">Helmet</dt><dd class="col-7">Rider wears a helmet. The driver carries a spare one.</dd>{% endif %}
     <dt class="col-5">Route</dt><dd class="col-7">{{ ride.distance_km }} km, about {{ ride.duration_min }} min</dd>
     <dt class="col-5">Driver</dt><dd class="col-7">{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}. <span class="badge text-bg-success">Documents verified</span></dd>
   </dl>

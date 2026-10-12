@@ -4,7 +4,8 @@ A ride matches when:
   1. it runs on the rider's weekday, the car is available that day and the driver is approved;
   2. it leaves within MATCH_TIME_WINDOW_MIN minutes of the rider's time;
   3. the rider's pickup and drop are both within MATCH_RADIUS_M of the driver's route;
-  4. the pickup comes before the drop along the driver's direction of travel.
+  4. the pickup comes before the drop along the driver's direction of travel;
+  5. optionally, the vehicle is the type the rider asked for (car or two-wheeler).
 """
 
 from dataclasses import dataclass
@@ -47,8 +48,10 @@ def time_difference_min(a, b):
     return min(gap, 1440 - gap)
 
 
-def find_rides(rider, pickup, drop, on_date, at_time):
-    """pickup and drop are (lat, lng). Returns a list of RideMatch, best first."""
+def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
+    """pickup and drop are (lat, lng). vehicle_type is 'car', 'bike' or None for both.
+
+    Returns a list of RideMatch, best first."""
     radius = settings.MATCH_RADIUS_M
     window = settings.MATCH_TIME_WINDOW_MIN
     (p_lat, p_lng), (d_lat, d_lng) = pickup, drop
@@ -69,6 +72,8 @@ def find_rides(rider, pickup, drop, on_date, at_time):
         .exclude(driver__unavailable_dates__date=on_date)
         .select_related("driver")
     )
+    if vehicle_type:
+        candidates = candidates.filter(vehicle_type=vehicle_type)
 
     matches = []
     for ride in candidates:

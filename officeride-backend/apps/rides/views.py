@@ -34,7 +34,8 @@ def driver_required(view):
 
 @driver_required
 def offer_ride(request):
-    form = OfferRideForm(request.POST or None)
+    vehicle_type = request.user.driver_document.vehicle_type
+    form = OfferRideForm(request.POST or None, vehicle_type=vehicle_type)
     if request.method == "POST" and form.is_valid():
         try:
             rides = services.create_ride(request.user, form.cleaned_data)
@@ -44,7 +45,8 @@ def offer_ride(request):
             count = len(rides)
             messages.success(request, "Your ride is live." if count == 1 else "Your ride and the way back are live.")
             return redirect("rides:mine")
-    return render(request, "rides/offer.html", {"form": form})
+    vehicle_label = request.user.driver_document.get_vehicle_type_display()
+    return render(request, "rides/offer.html", {"form": form, "vehicle_label": vehicle_label})
 
 
 @email_verified_required
@@ -87,6 +89,7 @@ def find_a_ride(request):
             drop=(data["drop_lat"], data["drop_lng"]),
             on_date=data["date"],
             at_time=data["time"],
+            vehicle_type=data["vehicle"] or None,
         )
     return render(
         request,

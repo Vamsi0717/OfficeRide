@@ -105,6 +105,15 @@ class FindRidesTests(TestCase):
         self.assertEqual(order[-1], later)
         self.assertCountEqual(order[:2], [self.ride, exact])
 
+    def test_vehicle_type_filter(self):
+        bike = make_ride(make_driver("bike@acme.com", vehicle_type="bike"), seats=1, vehicle_type="bike", has_spare_helmet=True)
+        both = self.search()
+        self.assertCountEqual([m.ride for m in both], [self.ride, bike])
+        only_bikes = matching.find_rides(self.rider, self.pickup, self.drop, self.monday, time(9, 0), vehicle_type="bike")
+        self.assertEqual([m.ride for m in only_bikes], [bike])
+        only_cars = matching.find_rides(self.rider, self.pickup, self.drop, self.monday, time(9, 0), vehicle_type="car")
+        self.assertEqual([m.ride for m in only_cars], [self.ride])
+
     def test_route_far_away_is_filtered_before_the_detailed_check(self):
         far = line((12.80, 77.50), (12.80, 77.55))
         make_ride(make_driver("far@acme.com"), points=far)

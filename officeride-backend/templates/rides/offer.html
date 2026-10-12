@@ -9,6 +9,11 @@
     {% include "rides/_place_picker.html" with label="Start (where you leave from)" name_field=form.origin_name lat_field=form.origin_lat lng_field=form.origin_lng %}
     {% include "rides/_place_picker.html" with label="End (your office or tech park)" name_field=form.destination_name lat_field=form.destination_lat lng_field=form.destination_lng %}
 
+    <div class="alert alert-light border small">
+      Vehicle type: <strong>{{ vehicle_label }}</strong>, taken from your approved documents.
+      {% if form.vehicle_type == "bike" %}A two-wheeler carries one rider.{% endif %}
+    </div>
+
     <div class="mb-3">
       <label class="form-label" for="{{ form.departure_time.id_for_label }}">{{ form.departure_time.label }}</label>
       {{ form.departure_time }}
@@ -37,6 +42,14 @@
         {% for error in form.car_model.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
       </div>
     </div>
+
+    {% if form.has_spare_helmet %}
+      <div class="form-check mb-3">
+        {{ form.has_spare_helmet }}
+        <label class="form-check-label" for="{{ form.has_spare_helmet.id_for_label }}">{{ form.has_spare_helmet.label }}</label>
+        {% for error in form.has_spare_helmet.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    {% endif %}
 
     <div class="form-check mb-2">
       {{ form.offer_return }}

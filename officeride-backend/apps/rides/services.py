@@ -2,6 +2,8 @@
 
 from django.db import transaction
 
+from apps.accounts.models import VehicleType
+
 from . import geo, maps
 from .models import Ride
 
@@ -21,7 +23,13 @@ def create_ride(driver, data):
     """
     route = maps.get_route(data["origin_lat"], data["origin_lng"], data["destination_lat"], data["destination_lng"])
     days = ",".join(sorted(data["office_days"]))
-    common = {"driver": driver, "office_days": days, "seats": data["seats"], "car_model": data["car_model"]}
+    vehicle_type = driver.driver_document.vehicle_type  # comes from the approved documents, never from the form
+    is_bike = vehicle_type == VehicleType.BIKE
+    common = {
+        "driver": driver, "office_days": days, "car_model": data["car_model"], "vehicle_type": vehicle_type,
+        "seats": 1 if is_bike else data["seats"],  # a two-wheeler carries one rider
+        "has_spare_helmet": bool(data.get("has_spare_helmet")) if is_bike else False,
+    }
 
     outbound = Ride(
         origin_name=data["origin_name"], origin_lat=data["origin_lat"], origin_lng=data["origin_lng"],

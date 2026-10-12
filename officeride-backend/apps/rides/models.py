@@ -3,6 +3,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.accounts.models import VehicleType
+
 WEEKDAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat"), (6, "Sun")]
 
 
@@ -21,7 +23,9 @@ class Ride(models.Model):
     departure_time = models.TimeField()
     office_days = models.CharField(max_length=13, help_text="Weekday numbers, Monday is 0, e.g. 0,1,2,3,4")
     seats = models.PositiveSmallIntegerField()
-    car_model = models.CharField(max_length=60)
+    vehicle_type = models.CharField(max_length=10, choices=VehicleType.choices, default=VehicleType.CAR)
+    car_model = models.CharField("vehicle model", max_length=60)
+    has_spare_helmet = models.BooleanField(default=False, help_text="Two-wheelers: the driver carries a spare helmet.")
 
     # The driving route from the maps service, kept so searches need no map calls.
     route_points = models.JSONField(default=list)
@@ -40,6 +44,7 @@ class Ride(models.Model):
         indexes = [models.Index(fields=["is_active", "departure_time"])]
         constraints = [
             models.CheckConstraint(condition=Q(seats__gte=1) & Q(seats__lte=6), name="ride_seats_1_to_6"),
+            models.CheckConstraint(condition=~Q(vehicle_type="bike") | Q(seats=1), name="two_wheeler_has_one_seat"),
         ]
 
     def __str__(self):
@@ -53,6 +58,10 @@ class Ride(models.Model):
     def office_days_display(self):
         names = dict(WEEKDAYS)
         return ", ".join(names[d] for d in sorted(self.office_days_list))
+
+    @property
+    def is_bike(self):
+        return self.vehicle_type == VehicleType.BIKE
 
     @property
     def distance_km(self):

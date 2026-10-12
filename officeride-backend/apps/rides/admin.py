@@ -5,8 +5,8 @@ from .models import CarUnavailableDate, Ride
 
 @admin.register(Ride)
 class RideAdmin(admin.ModelAdmin):
-    list_display = ("origin_name", "destination_name", "departure_time", "office_days_display", "seats", "driver", "is_active")
-    list_filter = ("is_active",)
+    list_display = ("origin_name", "destination_name", "vehicle_type", "departure_time", "office_days_display", "seats", "driver", "is_active")
+    list_filter = ("is_active", "vehicle_type")
     search_fields = ("origin_name", "destination_name", "driver__email", "car_model")
     # The route is a long list of map points. Keep it out of the edit form.
     exclude = ("route_points",)
