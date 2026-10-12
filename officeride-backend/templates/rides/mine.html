@@ -10,6 +10,7 @@
         <div class="fw-semibold">{{ ride.origin_name }} &rarr; {{ ride.destination_name }}</div>
         <div>{{ ride.departure_time|time:"g:i A" }} &middot; {{ ride.office_days_display }}</div>
         <div class="small text-muted">{{ ride.get_vehicle_type_display }} &middot; {{ ride.seats }} seat{{ ride.seats|pluralize }} &middot; {{ ride.car_model }} &middot; {{ ride.distance_km }} km, about {{ ride.duration_min }} min</div>
+        {% if ride.full_fare %}<div class="small mt-1">Each rider pays &#8377;{{ ride.full_fare.total }} for the full route.</div>{% endif %}
         <div class="mt-2 d-flex gap-2 align-items-center">
           {% if ride.is_active %}<span class="badge text-bg-success">Live</span>{% else %}<span class="badge text-bg-secondary">Off</span>{% endif %}
           <a class="btn btn-sm btn-outline-secondary" href="{% url 'rides:detail' ride.pk %}">Details</a>

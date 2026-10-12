@@ -1,0 +1,11 @@
+{% if fare %}
+  <div class="small mt-2">
+    <div><span class="fw-semibold fs-5">&#8377;{{ fare.total }}</span> <span class="text-muted">{{ label|default:"per rider" }}</span></div>
+    <div class="text-muted">
+      Fuel &#8377;{{ fare.fuel|floatformat:2 }} &middot; Wear and tear &#8377;{{ fare.wear|floatformat:2 }}{% if fare.toll %} &middot; Toll &#8377;{{ fare.toll|floatformat:2 }}{% endif %}
+    </div>
+    <div class="text-muted">Riders never pay more than the trip cost.</div>
+  </div>
+{% else %}
+  <div class="small text-muted mt-2">Fare not available for this ride yet.</div>
+{% endif %}

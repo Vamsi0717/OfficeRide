@@ -29,6 +29,7 @@ def create_ride(driver, data):
         "driver": driver, "office_days": days, "car_model": data["car_model"], "vehicle_type": vehicle_type,
         "seats": 1 if is_bike else data["seats"],  # a two-wheeler carries one rider
         "has_spare_helmet": bool(data.get("has_spare_helmet")) if is_bike else False,
+        "mileage_rate": data["mileage_rate"], "toll_total": data.get("toll_total") or 0,
     }
 
     outbound = Ride(

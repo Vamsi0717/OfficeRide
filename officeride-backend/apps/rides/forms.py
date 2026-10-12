@@ -7,6 +7,8 @@ from django.utils import timezone
 from apps.core.forms import BootstrapFormMixin
 
 from . import geo
+from apps.fares.models import MileageRate
+
 from .models import WEEKDAYS
 
 
@@ -59,6 +61,14 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
     )
     seats = forms.IntegerField(label="Seats you can offer", min_value=1, max_value=settings.MAX_SEATS, initial=3)
     car_model = forms.CharField(label="Vehicle (make and model)", max_length=60)
+    mileage_rate = forms.ModelChoiceField(
+        label="Vehicle class", queryset=MileageRate.objects.none(), empty_label="Choose one",
+        help_text="Sets the mileage we use to work out the fare.",
+    )
+    toll_total = forms.IntegerField(
+        label="Toll for the whole trip in ₹ (if any)", min_value=0, max_value=settings.FARE_MAX_TOLL_RS,
+        required=False, initial=0, help_text="Split between the seats.",
+    )
     has_spare_helmet = forms.BooleanField(label="I will carry a spare helmet for the rider", required=False)
     offer_return = forms.BooleanField(label="Also offer the way back", required=False)
     return_time = forms.TimeField(label="Leaving for the way back at", required=False, widget=_time_widget())
@@ -67,6 +77,8 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
         super().__init__(*args, **kwargs)
         self.vehicle_type = vehicle_type
         self.fields["office_days"].widget.attrs["class"] = "form-check-input"
+        # Only classes of this driver's vehicle type: a car driver is never offered scooter mileage.
+        self.fields["mileage_rate"].queryset = MileageRate.objects.filter(vehicle_type=vehicle_type)
         if vehicle_type == "bike":
             # A two-wheeler carries one rider, and the rider must wear a helmet.
             self.fields["seats"].initial = 1
@@ -77,6 +89,9 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
             )
         else:
             del self.fields["has_spare_helmet"]
+
+    def clean_toll_total(self):
+        return self.cleaned_data.get("toll_total") or 0
 
     def clean(self):
         cleaned = super().clean()

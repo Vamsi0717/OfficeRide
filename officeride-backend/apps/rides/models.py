@@ -26,6 +26,11 @@ class Ride(models.Model):
     vehicle_type = models.CharField(max_length=10, choices=VehicleType.choices, default=VehicleType.CAR)
     car_model = models.CharField("vehicle model", max_length=60)
     has_spare_helmet = models.BooleanField(default=False, help_text="Two-wheelers: the driver carries a spare helmet.")
+    # Sets the km per litre used for the fare. Empty only on rides made before Phase 4.
+    mileage_rate = models.ForeignKey(
+        "fares.MileageRate", null=True, blank=True, on_delete=models.PROTECT, related_name="rides",
+    )
+    toll_total = models.PositiveIntegerField(default=0, help_text="Toll for the whole trip in rupees, split between the seats.")
 
     # The driving route from the maps service, kept so searches need no map calls.
     route_points = models.JSONField(default=list)

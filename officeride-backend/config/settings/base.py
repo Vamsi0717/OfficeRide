@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.accounts",
     "apps.core",
+    "apps.fares",
     "apps.rides",
 ]
 
@@ -131,3 +132,6 @@ MATCH_RADIUS_M = 1500           # rider's pickup and drop must be within this of
 MATCH_TIME_WINDOW_MIN = 15      # departure may differ from the rider's time by this many minutes
 MATCH_MIN_TRIP_M = 500          # shortest shared stretch worth showing
 PLACE_SEARCH_PER_MINUTE = 30    # place searches per user per minute (protects the maps bill)
+
+# Fares (Phase 4)
+FARE_MAX_TOLL_RS = 1000         # most a driver can enter as the toll for one trip

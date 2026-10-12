@@ -41,6 +41,7 @@
               Your trip on this ride: about {{ m.rider_km }} km.
               Pickup is {{ m.pickup_offset_km }} km and drop is {{ m.drop_offset_km }} km from the route.
             </div>
+            {% include "fares/_breakdown.html" with fare=m.fare label="for your trip" %}
             <a class="btn btn-sm btn-outline-primary mt-2" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
           </div>
         </div>

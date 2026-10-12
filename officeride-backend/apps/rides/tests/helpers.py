@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from apps.accounts.models import DriverDocument
+from apps.fares.models import MileageRate
 from apps.rides import geo
 from apps.rides.models import Ride
 
@@ -60,6 +61,12 @@ def make_ride(driver, points=None, departure=time(9, 0), days="0,1,2,3,4", seats
     )
     values.update(extra)
     return Ride.objects.create(**values)
+
+
+def get_rate(vehicle_type="car", name=None):
+    """A starting mileage class made by the fares data migration. Defaults to Sedan or Commuter motorcycle."""
+    name = name or ("Sedan" if vehicle_type == "car" else "Commuter motorcycle")
+    return MileageRate.objects.get(vehicle_type=vehicle_type, name=name)
 
 
 def next_weekday(weekday=0):

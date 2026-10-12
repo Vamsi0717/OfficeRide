@@ -22,7 +22,7 @@ class RideMatch:
     ride: Ride
     pickup_offset_m: int     # how far the pickup is from the route
     drop_offset_m: int       # how far the drop is from the route
-    rider_distance_m: int    # distance along the route between pickup and drop (used for the fare in Phase 4)
+    rider_distance_m: int    # distance along the route between pickup and drop (the fare is worked out from this)
     time_diff_min: int
 
     @property
@@ -70,7 +70,7 @@ def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
         )
         .exclude(driver=rider)
         .exclude(driver__unavailable_dates__date=on_date)
-        .select_related("driver")
+        .select_related("driver", "mileage_rate")
     )
     if vehicle_type:
         candidates = candidates.filter(vehicle_type=vehicle_type)

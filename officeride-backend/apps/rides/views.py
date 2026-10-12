@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.accounts.decorators import email_verified_required
+from apps.fares import services as fare_services
 
 from . import maps, matching, services
 from .forms import OfferRideForm, SearchForm, UnavailableDateForm
@@ -43,7 +44,11 @@ def offer_ride(request):
             form.add_error(None, str(exc))
         else:
             count = len(rides)
-            messages.success(request, "Your ride is live." if count == 1 else "Your ride and the way back are live.")
+            text = "Your ride is live." if count == 1 else "Your ride and the way back are live."
+            fare = fare_services.full_route_fare(rides[0])
+            if fare:
+                text += f" Each rider pays about ₹{fare.total} for the full route."
+            messages.success(request, text)
             return redirect("rides:mine")
     vehicle_label = request.user.driver_document.get_vehicle_type_display()
     return render(request, "rides/offer.html", {"form": form, "vehicle_label": vehicle_label})
@@ -51,7 +56,10 @@ def offer_ride(request):
 
 @email_verified_required
 def my_rides(request):
-    rides = Ride.objects.filter(driver=request.user)
+    rides = list(Ride.objects.filter(driver=request.user).select_related("mileage_rate"))
+    rates = fare_services.load_rates()
+    for ride in rides:
+        ride.full_fare = fare_services.full_route_fare(ride, rates)
     return render(request, "rides/mine.html", {"rides": rides})
 
 
@@ -70,10 +78,11 @@ def toggle_ride(request, pk):
 
 @email_verified_required
 def ride_detail(request, pk):
-    ride = get_object_or_404(Ride.objects.select_related("driver"), pk=pk)
+    ride = get_object_or_404(Ride.objects.select_related("driver", "mileage_rate"), pk=pk)
     if not ride.is_active and ride.driver_id != request.user.id:
         return redirect("rides:find")
-    return render(request, "rides/detail.html", {"ride": ride, "is_owner": ride.driver_id == request.user.id})
+    fare = fare_services.full_route_fare(ride)
+    return render(request, "rides/detail.html", {"ride": ride, "fare": fare, "is_owner": ride.driver_id == request.user.id})
 
 
 @email_verified_required
@@ -91,6 +100,7 @@ def find_a_ride(request):
             at_time=data["time"],
             vehicle_type=data["vehicle"] or None,
         )
+        fare_services.attach_fares(matches)
     return render(
         request,
         "rides/find.html",
