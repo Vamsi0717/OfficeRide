@@ -42,7 +42,20 @@
               Pickup is {{ m.pickup_offset_km }} km and drop is {{ m.drop_offset_km }} km from the route.
             </div>
             {% include "fares/_breakdown.html" with fare=m.fare label="for your trip" %}
-            <a class="btn btn-sm btn-outline-primary mt-2" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
+            <div class="d-flex gap-2 align-items-center mt-2">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
+              <form method="post" action="{% url 'bookings:request_seat' m.ride.pk %}" class="m-0">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ form.date.value|stringformat:'s' }}">
+                <input type="hidden" name="pickup_name" value="{{ form.pickup_name.value|default:'' }}">
+                <input type="hidden" name="pickup_lat" value="{{ form.pickup_lat.value|default:'' }}">
+                <input type="hidden" name="pickup_lng" value="{{ form.pickup_lng.value|default:'' }}">
+                <input type="hidden" name="drop_name" value="{{ form.drop_name.value|default:'' }}">
+                <input type="hidden" name="drop_lat" value="{{ form.drop_lat.value|default:'' }}">
+                <input type="hidden" name="drop_lng" value="{{ form.drop_lng.value|default:'' }}">
+                <button class="btn btn-sm btn-primary">Request a seat</button>
+              </form>
+            </div>
           </div>
         </div>
       {% endfor %}

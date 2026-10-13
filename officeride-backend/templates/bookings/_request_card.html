@@ -1,0 +1,30 @@
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between">
+      <div class="fw-semibold">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }}</div>
+      <span class="badge text-bg-{% if req.status == 'accepted' or req.status == 'completed' %}success{% elif req.status == 'pending' %}warning{% else %}secondary{% endif %}">{{ req.get_status_display }}</span>
+    </div>
+    <div>{{ req.date|date:"D j M Y" }} at {{ req.ride.departure_time|time:"g:i A" }}
+      <span class="text-muted small">&middot; {{ req.ride.get_vehicle_type_display }}</span></div>
+    <div class="small text-muted mt-1">
+      {% if as_driver %}Rider {{ req.rider.first_name }} {{ req.rider.last_name|slice:":1" }}. &middot; {% else %}Driver {{ req.ride.driver.first_name }} {{ req.ride.driver.last_name|slice:":1" }}. &middot; {% endif %}
+      Pickup: {{ req.pickup_name }} &middot; Drop: {{ req.drop_name }}
+    </div>
+    <div class="mt-1"><span class="fw-semibold">&#8377;{{ req.fare }}</span>
+      {% if req.fare_adjustment %}<span class="text-muted small">(standard &#8377;{{ req.standard_fare }}, driver changed it by {{ req.fare_adjustment }})</span>{% endif %}
+    </div>
+    {% if req.late_cancel %}<div class="small text-danger mt-1">Cancelled late, less than an hour before departure.</div>{% endif %}
+    {% if req.actions %}
+      <div class="d-flex gap-2 flex-wrap mt-2">
+        {% for action in req.actions %}
+          <form method="post" action="{% url 'bookings:act' req.pk action %}" class="m-0">
+            {% csrf_token %}
+            <button class="btn btn-sm {% if action == 'accept' or action == 'complete' %}btn-success{% elif action == 'reject' or action == 'cancel' %}btn-outline-danger{% else %}btn-outline-secondary{% endif %}">
+              {% if action == 'accept' %}Accept{% elif action == 'reject' %}Reject{% elif action == 'cancel' %}Cancel{% elif action == 'complete' %}Mark completed{% else %}Report no-show{% endif %}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>

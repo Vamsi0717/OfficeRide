@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>My trips</h3>
+
+  <h5 class="mt-4">Rides I requested</h5>
+  {% for req in requested %}
+    {% include "bookings/_request_card.html" with req=req as_driver=False %}
+  {% empty %}
+    <p class="text-muted">You have not requested a ride yet. <a href="{% url 'rides:find' %}">Find a ride</a>.</p>
+  {% endfor %}
+
+  <h5 class="mt-4">Requests for my rides</h5>
+  {% for req in for_my_rides %}
+    {% include "bookings/_request_card.html" with req=req as_driver=True %}
+  {% empty %}
+    <p class="text-muted">No one has asked for a seat on your rides yet.</p>
+  {% endfor %}
+{% endblock %}

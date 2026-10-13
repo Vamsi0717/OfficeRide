@@ -1,6 +1,7 @@
 """Finding rides for a rider. Works for any two places in Bangalore.
 
 A ride matches when:
+  0. it still has a free seat on that date (accepted bookings fewer than the seats offered);
   1. it runs on the rider's weekday, the car is available that day and the driver is approved;
   2. it leaves within MATCH_TIME_WINDOW_MIN minutes of the rider's time;
   3. the rider's pickup and drop are both within MATCH_RADIUS_M of the driver's route;
@@ -11,6 +12,7 @@ A ride matches when:
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.db.models import Count, F, Q
 from django.utils import timezone
 
 from . import geo
@@ -48,6 +50,23 @@ def time_difference_min(a, b):
     return min(gap, 1440 - gap)
 
 
+def route_match(ride, pickup, drop):
+    """Where the rider's pickup and drop sit on this ride's route, or None when the ride does not fit.
+
+    Returns (pickup_offset_m, drop_offset_m, shared_m). Used by search and again when a seat is requested."""
+    (p_lat, p_lng), (d_lat, d_lng) = pickup, drop
+    points = ride.route_points
+    cumulative = geo.cumulative_distances_m(points)
+    pickup_off, pickup_along = geo.project_onto_route(points, cumulative, p_lat, p_lng)
+    drop_off, drop_along = geo.project_onto_route(points, cumulative, d_lat, d_lng)
+    if pickup_off > settings.MATCH_RADIUS_M or drop_off > settings.MATCH_RADIUS_M:
+        return None
+    shared = drop_along - pickup_along
+    if shared < settings.MATCH_MIN_TRIP_M:  # also rejects the wrong direction (negative)
+        return None
+    return pickup_off, drop_off, shared
+
+
 def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
     """pickup and drop are (lat, lng). vehicle_type is 'car', 'bike' or None for both.
 
@@ -70,6 +89,8 @@ def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
         )
         .exclude(driver=rider)
         .exclude(driver__unavailable_dates__date=on_date)
+        .annotate(taken=Count("requests", filter=Q(requests__date=on_date, requests__status="accepted")))
+        .filter(taken__lt=F("seats"))  # a full ride is not shown
         .select_related("driver", "mileage_rate")
     )
     if vehicle_type:
@@ -80,15 +101,10 @@ def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
         gap = time_difference_min(ride.departure_time, at_time)
         if gap > window:
             continue
-        points = ride.route_points
-        cumulative = geo.cumulative_distances_m(points)
-        pickup_off, pickup_along = geo.project_onto_route(points, cumulative, p_lat, p_lng)
-        drop_off, drop_along = geo.project_onto_route(points, cumulative, d_lat, d_lng)
-        if pickup_off > radius or drop_off > radius:
+        found = route_match(ride, pickup, drop)
+        if found is None:
             continue
-        shared = drop_along - pickup_along
-        if shared < settings.MATCH_MIN_TRIP_M:  # also rejects the wrong direction (negative)
-            continue
+        pickup_off, drop_off, shared = found
         matches.append(
             RideMatch(
                 ride=ride,

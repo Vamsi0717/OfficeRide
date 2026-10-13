@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.accounts",
+    "apps.bookings",
     "apps.core",
     "apps.fares",
     "apps.rides",
@@ -135,3 +136,8 @@ PLACE_SEARCH_PER_MINUTE = 30    # place searches per user per minute (protects t
 
 # Fares (Phase 4)
 FARE_MAX_TOLL_RS = 1000         # most a driver can enter as the toll for one trip
+
+# Phase 5: booking
+BOOKING_CLASH_MIN = 60          # a rider cannot hold two active requests whose rides leave within this many minutes
+LATE_CANCEL_MIN = 60            # cancelling an accepted ride less than this many minutes before departure is "late"
+BOOKING_DAYS_AHEAD = 60         # how far ahead a seat can be requested
