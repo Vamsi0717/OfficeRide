@@ -116,6 +116,62 @@ class OfferRideForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
         return cleaned
 
 
+class EditRideForm(BootstrapFormMixin, forms.Form):
+    """Change a ride you already offer. The start and end are not editable: to change the route, delete the ride and offer a new one."""
+
+    departure_time = forms.TimeField(label="Leaving at", widget=_time_widget())
+    office_days = forms.MultipleChoiceField(
+        label="Office days",
+        choices=[(str(n), label) for n, label in WEEKDAYS],
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={"required": "Choose at least one day."},
+    )
+    seats = forms.IntegerField(label="Seats you can offer", min_value=1, max_value=settings.MAX_SEATS)
+    car_model = forms.CharField(label="Vehicle (make and model)", max_length=60)
+    mileage_rate = forms.ModelChoiceField(
+        label="Vehicle class", queryset=MileageRate.objects.none(), empty_label="Choose one",
+        help_text="Sets the mileage we use to work out the fare.",
+    )
+    toll_total = forms.IntegerField(
+        label="Toll for the whole trip in ₹ (if any)", min_value=0, max_value=settings.FARE_MAX_TOLL_RS,
+        required=False, help_text="Split between the seats.",
+    )
+    fare_adjustment = forms.IntegerField(
+        label="Change the fare by ₹", min_value=-MAX_ADJUSTMENT_RS, max_value=MAX_ADJUSTMENT_RS, required=False,
+        help_text=f"Each new rider pays this much more (plus) or less (minus) than the standard fare. Between -{MAX_ADJUSTMENT_RS} and {MAX_ADJUSTMENT_RS}.",
+    )
+    has_spare_helmet = forms.BooleanField(label="I will carry a spare helmet for the rider", required=False)
+
+    def __init__(self, *args, ride, **kwargs):
+        initial = {
+            "departure_time": ride.departure_time, "office_days": ride.office_days_list and [str(d) for d in ride.office_days_list],
+            "seats": ride.seats, "car_model": ride.car_model, "mileage_rate": ride.mileage_rate_id,
+            "toll_total": ride.toll_total, "fare_adjustment": ride.fare_adjustment, "has_spare_helmet": ride.has_spare_helmet,
+        }
+        super().__init__(*args, initial=initial, **kwargs)
+        self.ride = ride
+        self.fields["office_days"].widget.attrs["class"] = "form-check-input"
+        self.fields["mileage_rate"].queryset = MileageRate.objects.filter(vehicle_type=ride.vehicle_type)
+        if ride.is_bike:
+            self.fields["seats"].disabled = True  # a two-wheeler carries one rider
+            self.fields["has_spare_helmet"].required = True
+            self.fields["has_spare_helmet"].error_messages["required"] = "Riders must wear a helmet. Confirm that you carry a spare one."
+        else:
+            del self.fields["has_spare_helmet"]
+
+    def clean_toll_total(self):
+        return self.cleaned_data.get("toll_total") or 0
+
+    def clean_fare_adjustment(self):
+        return self.cleaned_data.get("fare_adjustment") or 0
+
+
+class FareAdjustmentForm(forms.Form):
+    """The quick box on the ride page for moving the fare up or down."""
+
+    fare_adjustment = forms.IntegerField(min_value=-MAX_ADJUSTMENT_RS, max_value=MAX_ADJUSTMENT_RS)
+
+
 class SearchForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
     place_labels = {"pickup": "pickup place", "drop": "drop place"}
 

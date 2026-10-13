@@ -45,6 +45,8 @@ class Ride(models.Model):
     max_lng = models.FloatField()
 
     is_active = models.BooleanField(default=True)
+    # Set when the driver deletes the ride. The ride is kept for booking history but is never shown or booked.
+    deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -70,6 +72,10 @@ class Ride(models.Model):
     def office_days_display(self):
         names = dict(WEEKDAYS)
         return ", ".join(names[d] for d in sorted(self.office_days_list))
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
 
     @property
     def is_bike(self):

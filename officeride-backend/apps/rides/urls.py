@@ -13,5 +13,8 @@ urlpatterns = [
     path("places/search/", views.place_search, name="places_search"),
     path("<int:pk>/", views.ride_detail, name="detail"),
     path("<int:pk>/toggle/", views.toggle_ride, name="toggle"),
+    path("<int:pk>/edit/", views.ride_edit, name="edit"),
+    path("<int:pk>/fare/", views.ride_fare, name="fare"),
+    path("<int:pk>/delete/", views.ride_delete, name="delete"),
     path("<int:pk>/back/", views.offer_back, name="offer_back"),
 ]

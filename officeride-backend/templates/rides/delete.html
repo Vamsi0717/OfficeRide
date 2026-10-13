@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Delete this ride?</h3>
+  <p><strong>{{ ride.origin_name }} &rarr; {{ ride.destination_name }}</strong>, {{ ride.departure_time|time:"g:i A" }}, {{ ride.office_days_display }}.</p>
+  {% if bookings %}
+    <div class="alert alert-warning">
+      {{ bookings|length }} upcoming booking{{ bookings|length|pluralize }} will be cancelled:
+      <ul class="mb-0">
+        {% for b in bookings %}<li>{{ b.date|date:"D j M" }}, {{ b.rider.first_name }} {{ b.rider.last_name|slice:":1" }}. ({{ b.get_status_display|lower }})</li>{% endfor %}
+      </ul>
+    </div>
+  {% else %}
+    <p class="text-muted">No upcoming bookings.</p>
+  {% endif %}
+  <p class="text-muted small">The ride disappears from search and from your list. Past bookings stay in the history.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Yes, delete the ride</button>
+    <a class="btn btn-link" href="{% url 'rides:detail' ride.pk %}">Keep it</a>
+  </form>
+{% endblock %}

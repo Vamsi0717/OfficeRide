@@ -11,9 +11,10 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
+from apps.fares.engine import MAX_ADJUSTMENT_RS
 
 from . import maps, matching, services
-from .forms import OfferRideForm, ReturnTimeForm, SearchForm, UnavailableDateForm
+from .forms import EditRideForm, FareAdjustmentForm, OfferRideForm, ReturnTimeForm, SearchForm, UnavailableDateForm
 from .models import CarUnavailableDate, Ride
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ def offer_ride(request):
 
 @email_verified_required
 def my_rides(request):
-    rides = list(Ride.objects.filter(driver=request.user).select_related("mileage_rate"))
+    rides = list(Ride.objects.filter(driver=request.user, deleted_at__isnull=True).select_related("mileage_rate"))
     rates = fare_services.load_rates()
     for ride in rides:
         ride.full_fare = fare_services.full_route_fare(ride, rates)
@@ -66,7 +67,7 @@ def my_rides(request):
 @driver_required
 @require_POST
 def offer_back(request, pk):
-    ride = get_object_or_404(Ride, pk=pk, driver=request.user)
+    ride = get_object_or_404(Ride, pk=pk, driver=request.user, deleted_at__isnull=True)
     form = ReturnTimeForm(request.POST)
     if not form.is_valid():
         messages.error(request, "Choose the time you leave for the way back.")
@@ -83,7 +84,7 @@ def offer_back(request, pk):
 @email_verified_required
 @require_POST
 def toggle_ride(request, pk):
-    ride = get_object_or_404(Ride, pk=pk, driver=request.user)
+    ride = get_object_or_404(Ride, pk=pk, driver=request.user, deleted_at__isnull=True)
     if not ride.is_active and not request.user.can_offer_rides:
         messages.warning(request, "Your documents must be approved before this ride can go live again.")
         return redirect("rides:mine")
@@ -95,11 +96,16 @@ def toggle_ride(request, pk):
 
 @email_verified_required
 def ride_detail(request, pk):
-    ride = get_object_or_404(Ride.objects.select_related("driver", "mileage_rate"), pk=pk)
-    if not ride.is_active and ride.driver_id != request.user.id:
+    ride = get_object_or_404(Ride.objects.select_related("driver", "mileage_rate"), pk=pk, deleted_at__isnull=True)
+    is_owner = ride.driver_id == request.user.id
+    if not ride.is_active and not is_owner:
         return redirect("rides:find")
-    fare = fare_services.full_route_fare(ride)
-    return render(request, "rides/detail.html", {"ride": ride, "fare": fare, "is_owner": ride.driver_id == request.user.id})
+    context = {"ride": ride, "fare": fare_services.full_route_fare(ride), "is_owner": is_owner}
+    if is_owner:
+        context["bookings"] = list(services.live_future_requests(ride)[:20])
+        context["adjust_form"] = FareAdjustmentForm(initial={"fare_adjustment": ride.fare_adjustment})
+        context["max_adjustment"] = MAX_ADJUSTMENT_RS
+    return render(request, "rides/detail.html", context)
 
 
 def _search_values(form):
@@ -107,6 +113,62 @@ def _search_values(form):
     return {name: form[name].value() or "" for name in (
         "date", "pickup_name", "pickup_lat", "pickup_lng", "drop_name", "drop_lat", "drop_lng",
     )}
+
+
+def _own_live_ride(request, pk):
+    """A ride of the logged-in driver that has not been deleted, or a 404."""
+    return get_object_or_404(
+        Ride.objects.select_related("driver", "mileage_rate"), pk=pk, driver=request.user, deleted_at__isnull=True
+    )
+
+
+@driver_required
+def ride_edit(request, pk):
+    ride = _own_live_ride(request, pk)
+    form = EditRideForm(request.POST or None, ride=ride)
+    if request.method == "POST" and form.is_valid():
+        try:
+            ride = services.update_ride(ride, form.cleaned_data)
+        except services.RideChangeError as exc:
+            form.add_error(None, str(exc))
+        else:
+            messages.success(request, "Ride updated. Riders who already booked keep the fare they were shown.")
+            return redirect("rides:detail", pk=ride.pk)
+    return render(request, "rides/edit.html", {"form": form, "ride": ride})
+
+
+@driver_required
+@require_POST
+def ride_fare(request, pk):
+    ride = _own_live_ride(request, pk)
+    form = FareAdjustmentForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, f"Enter a whole number from -{MAX_ADJUSTMENT_RS} to {MAX_ADJUSTMENT_RS}.")
+        return redirect("rides:detail", pk=ride.pk)
+    try:
+        ride = services.set_fare_adjustment(ride, form.cleaned_data["fare_adjustment"])
+    except services.RideChangeError as exc:
+        messages.error(request, str(exc))
+    else:
+        fare = fare_services.full_route_fare(ride)
+        text = "Fare updated."
+        if fare:
+            text += f" New riders pay ₹{fare.total} for the full route. Riders who already booked keep their fare."
+        messages.success(request, text)
+    return redirect("rides:detail", pk=ride.pk)
+
+
+@driver_required
+def ride_delete(request, pk):
+    ride = _own_live_ride(request, pk)
+    if request.method == "POST":
+        cancelled = services.delete_ride(ride)
+        text = "Ride deleted."
+        if cancelled:
+            text += f" {cancelled} booking{'s' if cancelled != 1 else ''} cancelled."
+        messages.success(request, text)
+        return redirect("rides:mine")
+    return render(request, "rides/delete.html", {"ride": ride, "bookings": list(services.live_future_requests(ride))})
 
 
 @email_verified_required
