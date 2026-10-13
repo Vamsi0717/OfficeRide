@@ -14,6 +14,9 @@
       {% if req.fare_adjustment %}<span class="text-muted small">(standard &#8377;{{ req.standard_fare }}, driver changed it by {{ req.fare_adjustment }})</span>{% endif %}
     </div>
     {% if req.late_cancel %}<div class="small text-danger mt-1">Cancelled late, less than an hour before departure.</div>{% endif %}
+    {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
+      <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}">Request the ride back</a></div>
+    {% endif %}
     {% if req.actions %}
       <div class="d-flex gap-2 flex-wrap mt-2">
         {% for action in req.actions %}

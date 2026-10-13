@@ -13,6 +13,7 @@ from apps.fares import services as fare_services
 from apps.rides import matching
 from apps.rides.models import CarUnavailableDate, Ride
 
+from . import planner
 from .models import RideRequest
 
 S = RideRequest.Status
@@ -63,6 +64,8 @@ def request_seat(rider, ride_id, date, pickup, drop):
             raise BookingError("This ride does not run on that day.")
         if CarUnavailableDate.objects.filter(driver_id=ride.driver_id, date=date).exists():
             raise BookingError("The driver is not available on that day.")
+        if ride.driver_id in planner.drivers_not_driving([ride.driver_id], date):
+            raise BookingError("The driver is not driving on that day.")
 
         candidate = RideRequest(ride=ride, date=date)
         if candidate.departure_at <= timezone.now():

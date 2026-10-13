@@ -149,6 +149,10 @@ class SearchForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
         return cleaned
 
 
+class ReturnTimeForm(forms.Form):
+    return_time = forms.TimeField()
+
+
 class UnavailableDateForm(BootstrapFormMixin, forms.Form):
     date = forms.DateField(label="Date", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
     reason = forms.CharField(label="Reason (optional)", max_length=100, required=False)

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>My week</h3>
+  <p class="text-muted">Say what you plan to do on each office day. It repeats every week.
+    On days you are not driving, your seats are hidden from search. Leave a day on "No plan" to change nothing.</p>
+
+  <form method="post" class="mb-4">
+    {% csrf_token %}
+    <input type="hidden" name="form" value="weekly">
+    {% for field in weekly %}
+      <div class="row align-items-center mb-2">
+        <label class="col-5 col-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        <div class="col-7">{{ field }}</div>
+      </div>
+    {% endfor %}
+    <button class="btn btn-primary mt-2">Save my week</button>
+  </form>
+
+  <h5>Change one day</h5>
+  <p class="text-muted small">For a day that is different from your usual week. If your car is marked unavailable on a day, that day counts as riding.</p>
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="form" value="override">
+    <div class="row">
+      <div class="col-6 mb-2">
+        <label class="form-label" for="{{ override.date.id_for_label }}">{{ override.date.label }}</label>
+        {{ override.date }}
+        {% for error in override.date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-2">
+        <label class="form-label" for="{{ override.mode.id_for_label }}">{{ override.mode.label }}</label>
+        {{ override.mode }}
+      </div>
+    </div>
+    <button class="btn btn-outline-primary">Save this day</button>
+  </form>
+
+  {% if overrides %}
+    <ul class="list-group">
+      {% for entry in overrides %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <span>{{ entry.date|date:"D j M Y" }}: {{ entry.get_mode_display }}</span>
+          <form method="post" action="{% url 'bookings:plan_override_delete' entry.pk %}" class="m-0">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-secondary">Use my weekly plan</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

@@ -13,7 +13,7 @@ from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
 
 from . import maps, matching, services
-from .forms import OfferRideForm, SearchForm, UnavailableDateForm
+from .forms import OfferRideForm, ReturnTimeForm, SearchForm, UnavailableDateForm
 from .models import CarUnavailableDate, Ride
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,23 @@ def my_rides(request):
     return render(request, "rides/mine.html", {"rides": rides})
 
 
+@driver_required
+@require_POST
+def offer_back(request, pk):
+    ride = get_object_or_404(Ride, pk=pk, driver=request.user)
+    form = ReturnTimeForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Choose the time you leave for the way back.")
+        return redirect("rides:mine")
+    try:
+        back = services.create_return_ride(ride, form.cleaned_data["return_time"])
+    except services.ReturnRideError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"The way back is live: {back.origin_name} to {back.destination_name} at {back.departure_time:%I:%M %p}.")
+    return redirect("rides:mine")
+
+
 @email_verified_required
 @require_POST
 def toggle_ride(request, pk):
@@ -85,6 +102,13 @@ def ride_detail(request, pk):
     return render(request, "rides/detail.html", {"ride": ride, "fare": fare, "is_owner": ride.driver_id == request.user.id})
 
 
+def _search_values(form):
+    """The rider's search, passed on to the Request button of each result."""
+    return {name: form[name].value() or "" for name in (
+        "date", "pickup_name", "pickup_lat", "pickup_lng", "drop_name", "drop_lat", "drop_lng",
+    )}
+
+
 @email_verified_required
 def find_a_ride(request):
     searched = "date" in request.GET
@@ -104,7 +128,7 @@ def find_a_ride(request):
     return render(
         request,
         "rides/find.html",
-        {"form": form, "matches": matches, "window": settings.MATCH_TIME_WINDOW_MIN},
+        {"form": form, "matches": matches, "window": settings.MATCH_TIME_WINDOW_MIN, "search": _search_values(form)},
     )
 
 

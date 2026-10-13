@@ -54,3 +54,30 @@ def create_ride(driver, data):
         back.save()
         rides.append(back)
     return rides
+
+
+class ReturnRideError(Exception):
+    """The way-back ride could not be made. str(error) is safe to show."""
+
+
+@transaction.atomic
+def create_return_ride(ride, return_time):
+    """Copy a ride with the start and end swapped and the road reversed, leaving at return_time.
+
+    The way back is its own Ride with its own bookings."""
+    if Ride.objects.filter(
+        driver=ride.driver, origin_name=ride.destination_name, destination_name=ride.origin_name,
+        departure_time=return_time, is_active=True,
+    ).exists():
+        raise ReturnRideError("You already offer the way back at that time.")
+    back = Ride(
+        driver=ride.driver, office_days=ride.office_days, seats=ride.seats, vehicle_type=ride.vehicle_type,
+        car_model=ride.car_model, has_spare_helmet=ride.has_spare_helmet, mileage_rate=ride.mileage_rate,
+        toll_total=ride.toll_total, fare_adjustment=ride.fare_adjustment,
+        origin_name=ride.destination_name, origin_lat=ride.destination_lat, origin_lng=ride.destination_lng,
+        destination_name=ride.origin_name, destination_lat=ride.origin_lat, destination_lng=ride.origin_lng,
+        departure_time=return_time,
+    )
+    _apply_route(back, maps.RouteResult([tuple(p) for p in reversed(ride.route_points)], ride.route_distance_m, ride.route_duration_s))
+    back.save()
+    return back

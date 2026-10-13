@@ -2,7 +2,8 @@
 
 A ride matches when:
   0. it still has a free seat on that date (accepted bookings fewer than the seats offered);
-  1. it runs on the rider's weekday, the car is available that day and the driver is approved;
+  1. it runs on the rider's weekday, the car is available that day, the driver's plan for the day is
+     driving (or they have no plan) and the driver is approved;
   2. it leaves within MATCH_TIME_WINDOW_MIN minutes of the rider's time;
   3. the rider's pickup and drop are both within MATCH_RADIUS_M of the driver's route;
   4. the pickup comes before the drop along the driver's direction of travel;
@@ -14,6 +15,8 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.db.models import Count, F, Q
 from django.utils import timezone
+
+from apps.bookings import planner
 
 from . import geo
 from .models import Ride
@@ -67,12 +70,13 @@ def route_match(ride, pickup, drop):
     return pickup_off, drop_off, shared
 
 
-def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
+def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None, window_min=None):
     """pickup and drop are (lat, lng). vehicle_type is 'car', 'bike' or None for both.
+    window_min is how many minutes the departure may differ from at_time (the setting when empty).
 
     Returns a list of RideMatch, best first."""
     radius = settings.MATCH_RADIUS_M
-    window = settings.MATCH_TIME_WINDOW_MIN
+    window = settings.MATCH_TIME_WINDOW_MIN if window_min is None else window_min
     (p_lat, p_lng), (d_lat, d_lng) = pickup, drop
     m_lat, m_lng = geo.box_margin_degrees(radius, p_lat)
 
@@ -96,8 +100,13 @@ def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None):
     if vehicle_type:
         candidates = candidates.filter(vehicle_type=vehicle_type)
 
+    candidates = list(candidates)
+    # A driver whose plan for that day says riding or not going does not offer seats that day.
+    hidden = planner.drivers_not_driving({ride.driver_id for ride in candidates}, on_date)
     matches = []
     for ride in candidates:
+        if ride.driver_id in hidden:
+            continue
         gap = time_difference_min(ride.departure_time, at_time)
         if gap > window:
             continue

@@ -2,13 +2,16 @@ from django.contrib import messages
 from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import email_verified_required
+from apps.fares import services as fare_services
+from apps.rides import matching
 
-from . import services
-from .forms import RequestSeatForm
-from .models import RideRequest
+from . import planner, services
+from .forms import BackSearchForm, OverrideForm, RequestSeatForm, WeeklyPlanForm
+from .models import PlanDay, RideRequest
 
 DONE_MESSAGES = {
     "accept": "Request accepted. The rider has a seat.",
@@ -67,3 +70,56 @@ def act(request, pk, action):
     else:
         messages.success(request, DONE_MESSAGES[action])
     return redirect("bookings:trips")
+
+
+@email_verified_required
+def plan(request):
+    """The weekly planner and one-off overrides."""
+    can_drive = request.user.can_offer_rides
+    initial = {f"day_{day}": mode for day, mode in planner.weekly_modes(request.user).items()}
+    weekly = WeeklyPlanForm(request.POST if request.POST.get("form") == "weekly" else None, initial=initial, can_drive=can_drive, prefix="")
+    override = OverrideForm(request.POST if request.POST.get("form") == "override" else None, can_drive=can_drive)
+    if request.method == "POST":
+        if request.POST.get("form") == "weekly" and weekly.is_valid():
+            planner.save_weekly(request.user, weekly.modes())
+            messages.success(request, "Your weekly plan is saved. It repeats every week.")
+            return redirect("bookings:plan")
+        if request.POST.get("form") == "override" and override.is_valid():
+            planner.set_override(request.user, override.cleaned_data["date"], override.cleaned_data["mode"])
+            messages.success(request, "That day is saved.")
+            return redirect("bookings:plan")
+    overrides = PlanDay.objects.filter(user=request.user, date__gte=timezone.localdate()).order_by("date")
+    return render(request, "bookings/plan.html", {"weekly": weekly, "override": override, "overrides": overrides})
+
+
+@email_verified_required
+@require_POST
+def plan_override_delete(request, pk):
+    entry = get_object_or_404(PlanDay, pk=pk, user=request.user, date__isnull=False)
+    entry.delete()
+    messages.success(request, "That day is back to your weekly plan.")
+    return redirect("bookings:plan")
+
+
+@email_verified_required
+def request_back(request, pk):
+    """Find a ride for the way back: the same two places swapped, on a date and at a time the rider chooses."""
+    booking = get_object_or_404(RideRequest, pk=pk, rider=request.user, status__in=[RideRequest.Status.ACCEPTED, RideRequest.Status.COMPLETED])
+    searched = "date" in request.GET
+    form = BackSearchForm(request.GET if searched else None, initial={"date": booking.date, "time": "18:00", "window": "30"})
+    matches = None
+    if searched and form.is_valid():
+        data = form.cleaned_data
+        matches = matching.find_rides(
+            rider=request.user,
+            pickup=(booking.drop_lat, booking.drop_lng),
+            drop=(booking.pickup_lat, booking.pickup_lng),
+            on_date=data["date"], at_time=data["time"], window_min=int(data["window"]),
+        )
+        fare_services.attach_fares(matches)
+    search = {
+        "date": form["date"].value() or "", "pickup_name": booking.drop_name, "pickup_lat": booking.drop_lat,
+        "pickup_lng": booking.drop_lng, "drop_name": booking.pickup_name, "drop_lat": booking.pickup_lat,
+        "drop_lng": booking.pickup_lng,
+    }
+    return render(request, "bookings/back.html", {"booking": booking, "form": form, "matches": matches, "search": search})

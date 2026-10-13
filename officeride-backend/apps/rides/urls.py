@@ -13,4 +13,5 @@ urlpatterns = [
     path("places/search/", views.place_search, name="places_search"),
     path("<int:pk>/", views.ride_detail, name="detail"),
     path("<int:pk>/toggle/", views.toggle_ride, name="toggle"),
+    path("<int:pk>/back/", views.offer_back, name="offer_back"),
 ]

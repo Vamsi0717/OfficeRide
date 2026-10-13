@@ -6,6 +6,37 @@ from django.db.models import Q
 from django.utils import timezone
 
 
+class PlanDay(models.Model):
+    """What a person plans to do on a day: drive, ride with someone, or not go to the office.
+
+    A row with a weekday repeats every week. A row with a date is a one-off override for that day."""
+
+    class Mode(models.TextChoices):
+        DRIVING = "driving", "Driving"
+        RIDING = "riding", "Riding with someone"
+        NOT_GOING = "not_going", "Not going to the office"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="plan_days")
+    weekday = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Monday is 0. Empty for a one-off date.")
+    date = models.DateField(null=True, blank=True, help_text="Set for a one-off override. Empty for a weekly row.")
+    mode = models.CharField(max_length=10, choices=Mode.choices)
+
+    class Meta:
+        ordering = ["weekday", "date"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(Q(weekday__isnull=False, date__isnull=True) & Q(weekday__lte=6))
+                | (Q(weekday__isnull=True, date__isnull=False)),
+                name="plan_day_is_weekly_or_one_off",
+            ),
+            models.UniqueConstraint(fields=["user", "weekday"], condition=Q(weekday__isnull=False), name="one_plan_per_user_weekday"),
+            models.UniqueConstraint(fields=["user", "date"], condition=Q(date__isnull=False), name="one_override_per_user_date"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} {self.date or self.weekday}: {self.mode}"
+
+
 class RideRequest(models.Model):
     """One rider asking for one seat on one ride on one date. It also keeps the fare the rider was shown."""
 

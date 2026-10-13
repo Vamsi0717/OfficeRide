@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Request the ride back</h3>
+  <p class="text-muted">From {{ booking.drop_name }} back to {{ booking.pickup_name }}. Choose the day and time you want to leave.</p>
+  <form method="get" novalidate class="mb-4">
+    <div class="row">
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+        {{ form.date }}
+        {% for error in form.date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
+        {{ form.time }}
+        {% for error in form.time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.window.id_for_label }}">{{ form.window.label }}</label>
+      {{ form.window }}
+    </div>
+    <button class="btn btn-primary">Search</button>
+    <a class="btn btn-link" href="{% url 'bookings:trips' %}">Back to my trips</a>
+  </form>
+
+  {% if matches is not None %}
+    {% if matches %}
+      <h5>{{ matches|length }} ride{{ matches|length|pluralize }} found</h5>
+      {% for m in matches %}
+        {% include "rides/_match_card.html" with m=m search=search %}
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-secondary">No rides match yet. Try a wider time window or another day.</div>
+    {% endif %}
+  {% endif %}
+{% endblock %}
