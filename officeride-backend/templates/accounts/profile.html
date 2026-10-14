@@ -28,4 +28,5 @@
   <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:documents' %}">
     {% if doc %}Update documents{% else %}Submit documents{% endif %}
   </a>
+  {% include "trust/_profile_panel.html" %}
 {% endblock %}

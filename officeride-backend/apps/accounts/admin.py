@@ -11,12 +11,13 @@ from .models import DriverDocument, User
 class CustomUserAdmin(UserAdmin):
     ordering = ("email",)
     list_display = ("email", "first_name", "last_name", "techpark", "email_verified", "is_staff")
-    list_filter = ("email_verified", "techpark", "is_staff")
+    list_filter = ("email_verified", "under_review", "techpark", "is_staff")
     search_fields = ("email", "first_name", "last_name")
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal info", {"fields": ("first_name", "last_name", "phone", "home_area", "techpark")}),
         ("Verification", {"fields": ("email_verified",)}),
+        ("Trust", {"fields": ("suspended_until", "under_review")}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )

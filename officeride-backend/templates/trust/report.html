@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Report a problem</h3>
+  <p class="text-muted">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }} on {{ req.date|date:"D j M Y" }}.
+    About {{ reported.first_name }} {{ reported.last_name|slice:":1" }}. Only our team reads this.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="btn btn-danger">Send report</button>
+    <a class="btn btn-link" href="{% url 'bookings:trips' %}">Cancel</a>
+  </form>
+{% endblock %}

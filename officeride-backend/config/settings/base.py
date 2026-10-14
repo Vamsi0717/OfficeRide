@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.fares",
     "apps.rides",
+    "apps.trust",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -141,3 +142,9 @@ FARE_MAX_TOLL_RS = 1000         # most a driver can enter as the toll for one tr
 BOOKING_CLASH_MIN = 60          # a rider cannot hold two active requests whose rides leave within this many minutes
 LATE_CANCEL_MIN = 60            # cancelling an accepted ride less than this many minutes before departure is "late"
 BOOKING_DAYS_AHEAD = 60         # how far ahead a seat can be requested
+
+# Strikes (Phase 6). Only strikes that are not waived and are younger than STRIKE_WINDOW_DAYS count.
+STRIKE_WINDOW_DAYS = 90
+STRIKE_SUSPEND_AT = 3           # the 3rd active strike suspends the account
+STRIKE_REVIEW_AT = 5            # the 5th sends the account to an admin
+SUSPENSION_DAYS = 7

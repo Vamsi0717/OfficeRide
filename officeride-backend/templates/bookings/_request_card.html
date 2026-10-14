@@ -17,6 +17,15 @@
     {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
       <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}">Request the ride back</a></div>
     {% endif %}
+    {% if req.status == 'completed' or req.status == 'cancelled' or req.status == 'no_show' %}
+      <div class="d-flex gap-2 flex-wrap mt-2">
+        {% if req.status == 'completed' %}
+          {% if req.rated %}<span class="badge text-bg-light border align-self-center">You rated this ride</span>
+          {% else %}<a class="btn btn-sm btn-outline-warning" href="{% url 'trust:rate' req.pk %}">Rate this ride</a>{% endif %}
+        {% endif %}
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'trust:report' req.pk %}">Report a problem</a>
+      </div>
+    {% endif %}
     {% if req.actions %}
       <div class="d-flex gap-2 flex-wrap mt-2">
         {% for action in req.actions %}

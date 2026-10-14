@@ -9,6 +9,8 @@ from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
+from apps.trust import services as trust_services
+
 from . import services
 from .decorators import email_verified_required
 from .forms import DriverDocumentForm, OTPForm, ProfileForm, RegisterForm
@@ -87,7 +89,13 @@ def profile(request):
         messages.success(request, "Profile saved.")
         return redirect("accounts:profile")
     doc = DriverDocument.objects.filter(user=request.user).first()
-    return render(request, "accounts/profile.html", {"form": form, "doc": doc})
+    context = {
+        "form": form, "doc": doc,
+        "stats": trust_services.rating_stats([request.user.id])[request.user.id],
+        "strikes": trust_services.strike_summary(request.user),
+        "strike_list": request.user.strikes.all()[:10],
+    }
+    return render(request, "accounts/profile.html", context)
 
 
 @email_verified_required

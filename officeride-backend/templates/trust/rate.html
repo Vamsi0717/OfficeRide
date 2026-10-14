@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3>Rate your ride</h3>
+  <p class="text-muted">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }} on {{ req.date|date:"D j M Y" }}.
+    You are rating {{ rated.first_name }} {{ rated.last_name|slice:":1" }}.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      <label class="form-label">{{ form.stars.label }}</label>
+      {% for radio in form.stars %}
+        <div class="form-check">{{ radio.tag }} <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label></div>
+      {% endfor %}
+      {% for error in form.stars.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{{ form.tags.label }}</label>
+      {% for box in form.tags %}
+        <div class="form-check">{{ box.tag }} <label class="form-check-label" for="{{ box.id_for_label }}">{{ box.choice_label }}</label></div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="{{ form.comment.id_for_label }}">{{ form.comment.label }}</label>
+      {{ form.comment }}
+      {% for error in form.comment.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </div>
+    <button class="btn btn-primary">Save rating</button>
+    <a class="btn btn-link" href="{% url 'bookings:trips' %}">Not now</a>
+  </form>
+{% endblock %}

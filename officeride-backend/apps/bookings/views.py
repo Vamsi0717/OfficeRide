@@ -8,6 +8,8 @@ from django.views.decorators.http import require_POST
 from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
 from apps.rides import matching
+from apps.trust import services as trust_services
+from apps.trust.models import Rating
 
 from . import planner, services
 from .forms import BackSearchForm, OverrideForm, RequestSeatForm, WeeklyPlanForm
@@ -50,8 +52,10 @@ def trips(request):
     base = RideRequest.objects.select_related("ride", "ride__driver", "rider")
     requested = list(base.filter(rider=user)[:50])
     for_my_rides = list(base.filter(ride__driver=user)[:50])
+    rated = set(Rating.objects.filter(rater=user, request__in=requested + for_my_rides).values_list("request_id", flat=True))
     for req in requested + for_my_rides:
         req.actions = services.allowed_actions(req, user)
+        req.rated = req.pk in rated
     return render(request, "bookings/trips.html", {"requested": requested, "for_my_rides": for_my_rides})
 
 
@@ -117,6 +121,7 @@ def request_back(request, pk):
             on_date=data["date"], at_time=data["time"], window_min=int(data["window"]),
         )
         fare_services.attach_fares(matches)
+        trust_services.attach_driver_stats(matches)
     search = {
         "date": form["date"].value() or "", "pickup_name": booking.drop_name, "pickup_lat": booking.drop_lat,
         "pickup_lng": booking.drop_lng, "drop_name": booking.pickup_name, "drop_lat": booking.pickup_lat,

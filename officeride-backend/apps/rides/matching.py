@@ -86,12 +86,15 @@ def find_rides(rider, pickup, drop, on_date, at_time, vehicle_type=None, window_
             office_days__contains=str(on_date.weekday()),
             driver__driver_document__status="approved",
             driver__driver_document__insurance_expiry__gte=max(on_date, timezone.localdate()),
+            driver__under_review=False,
+            
             min_lat__lte=min(p_lat, d_lat) + m_lat,
             max_lat__gte=max(p_lat, d_lat) - m_lat,
             min_lng__lte=min(p_lng, d_lng) + m_lng,
             max_lng__gte=max(p_lng, d_lng) - m_lng,
         )
         .exclude(driver=rider)
+        .exclude(driver__suspended_until__gt=timezone.now())
         .exclude(driver__unavailable_dates__date=on_date)
         .annotate(taken=Count("requests", filter=Q(requests__date=on_date, requests__status="accepted")))
         .filter(taken__lt=F("seats"))  # a full ride is not shown

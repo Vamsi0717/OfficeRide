@@ -1,0 +1,2 @@
+{% if stats.count %}<span class="badge text-bg-warning" title="Average of {{ stats.count }} rating{{ stats.count|pluralize }}">&#9733; {{ stats.average }}</span> <span class="text-muted">({{ stats.count }})</span>{% else %}<span class="text-muted">No ratings yet</span>{% endif %}
+&middot; {{ stats.rides }} ride{{ stats.rides|pluralize }} shared

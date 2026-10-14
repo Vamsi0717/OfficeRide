@@ -32,6 +32,7 @@
   {% for message in messages %}
     <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
   {% endfor %}
+  {% if user.is_authenticated and user.is_blocked %}<div class="alert alert-danger" role="alert">{{ user.block_message }}</div>{% endif %}
   {% block content %}{% endblock %}
 </div>
 {% block scripts %}{% endblock %}

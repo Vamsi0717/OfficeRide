@@ -45,6 +45,9 @@ class User(AbstractUser):
     home_area = models.CharField(max_length=80, blank=True)
     techpark = models.CharField("tech park", max_length=20, choices=TECH_PARKS, blank=True)
     email_verified = models.BooleanField(default=False)
+    # Set by the strike rules (Phase 6) or by an admin. While either is in force the person cannot offer or request rides.
+    suspended_until = models.DateTimeField(null=True, blank=True)
+    under_review = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -53,6 +56,24 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def is_suspended(self):
+        return bool(self.suspended_until and self.suspended_until > timezone.now())
+
+    @property
+    def is_blocked(self):
+        """True while the account is suspended or waiting for an admin to review it."""
+        return self.under_review or self.is_suspended
+
+    @property
+    def block_message(self):
+        if self.under_review:
+            return "Your account is under review by our team. We will contact you soon."
+        if self.is_suspended:
+            end = timezone.localtime(self.suspended_until)
+            return f"Your account is suspended until {end:%d %b %Y} because of repeated late cancellations or no-shows."
+        return ""
 
     @property
     def can_offer_rides(self):

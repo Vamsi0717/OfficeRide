@@ -12,6 +12,7 @@ from django.views.decorators.http import require_GET, require_POST
 from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
 from apps.fares.engine import MAX_ADJUSTMENT_RS
+from apps.trust import services as trust_services
 
 from . import maps, matching, services
 from .forms import EditRideForm, FareAdjustmentForm, OfferRideForm, ReturnTimeForm, SearchForm, UnavailableDateForm
@@ -36,6 +37,9 @@ def driver_required(view):
 
 @driver_required
 def offer_ride(request):
+    if request.user.is_blocked:
+        messages.error(request, request.user.block_message)
+        return redirect("accounts:profile")
     vehicle_type = request.user.driver_document.vehicle_type
     form = OfferRideForm(request.POST or None, vehicle_type=vehicle_type)
     if request.method == "POST" and form.is_valid():
@@ -67,6 +71,9 @@ def my_rides(request):
 @driver_required
 @require_POST
 def offer_back(request, pk):
+    if request.user.is_blocked:
+        messages.error(request, request.user.block_message)
+        return redirect("rides:mine")
     ride = get_object_or_404(Ride, pk=pk, driver=request.user, deleted_at__isnull=True)
     form = ReturnTimeForm(request.POST)
     if not form.is_valid():
@@ -88,6 +95,9 @@ def toggle_ride(request, pk):
     if not ride.is_active and not request.user.can_offer_rides:
         messages.warning(request, "Your documents must be approved before this ride can go live again.")
         return redirect("rides:mine")
+    if not ride.is_active and request.user.is_blocked:
+        messages.error(request, request.user.block_message)
+        return redirect("rides:mine")
     ride.is_active = not ride.is_active
     ride.save(update_fields=["is_active"])
     messages.success(request, "Ride is live again." if ride.is_active else "Ride is switched off.")
@@ -101,6 +111,8 @@ def ride_detail(request, pk):
     if not ride.is_active and not is_owner:
         return redirect("rides:find")
     context = {"ride": ride, "fare": fare_services.full_route_fare(ride), "is_owner": is_owner}
+    if not is_owner:
+        context["driver_stats"] = trust_services.rating_stats([ride.driver_id])[ride.driver_id]
     if is_owner:
         context["bookings"] = list(services.live_future_requests(ride)[:20])
         context["adjust_form"] = FareAdjustmentForm(initial={"fare_adjustment": ride.fare_adjustment})
@@ -187,6 +199,7 @@ def find_a_ride(request):
             vehicle_type=data["vehicle"] or None,
         )
         fare_services.attach_fares(matches)
+        trust_services.attach_driver_stats(matches)
     return render(
         request,
         "rides/find.html",

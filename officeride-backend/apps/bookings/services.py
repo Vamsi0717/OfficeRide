@@ -12,6 +12,8 @@ from django.utils import timezone
 from apps.fares import services as fare_services
 from apps.rides import matching
 from apps.rides.models import CarUnavailableDate, Ride
+from apps.trust import services as trust_services
+from apps.trust.models import Strike
 
 from . import planner
 from .models import RideRequest
@@ -45,6 +47,8 @@ def _lock_ride(ride_id):
 
 def request_seat(rider, ride_id, date, pickup, drop):
     """pickup and drop are dicts with name, lat and lng. Returns the new pending RideRequest."""
+    if rider.is_blocked:
+        raise BookingError(rider.block_message)
     today = timezone.localdate()
     if date < today:
         raise BookingError("Choose today or a future date.")
@@ -56,7 +60,7 @@ def request_seat(rider, ride_id, date, pickup, drop):
             ride = _lock_ride(ride_id)
         except Ride.DoesNotExist:
             raise BookingError("That ride does not exist.") from None
-        if not ride.is_active or not ride.driver.can_offer_rides:
+        if not ride.is_active or not ride.driver.can_offer_rides or ride.driver.is_blocked:
             raise BookingError("This ride is not available.")
         if ride.driver_id == rider.id:
             raise BookingError("You cannot request a seat on your own ride.")
@@ -132,6 +136,8 @@ def _move(req, new_status):
 
 
 def accept(request_id, user):
+    if user.is_blocked:
+        raise BookingError(user.block_message)
     with transaction.atomic():
         req = _load(request_id, user, driver_only=True)
         _move(req, S.ACCEPTED)
@@ -154,7 +160,7 @@ def reject(request_id, user):
 
 
 def cancel(request_id, user):
-    """The rider or the driver cancels a pending or accepted request. Late cancelling is recorded for Phase 6."""
+    """The rider or the driver cancels a pending or accepted request. A late cancellation and a no-show each give a strike to the right person."""
     with transaction.atomic():
         req = _load(request_id, user)
         was_accepted = req.status == S.ACCEPTED
@@ -166,6 +172,8 @@ def cancel(request_id, user):
         req.late_cancel = was_accepted and (req.departure_at - now) < timedelta(minutes=settings.LATE_CANCEL_MIN)
         req.decided_at = now
         req.save(update_fields=["status", "cancelled_by", "late_cancel", "decided_at", "updated_at"])
+        if req.late_cancel:
+            trust_services.record_strike(user, Strike.Reason.LATE_CANCEL, req)
         return req
 
 
@@ -187,6 +195,9 @@ def report_no_show(request_id, user):
             raise BookingError("You can report a no-show only after the ride has left.")
         req.reported_by = user
         req.save(update_fields=["status", "reported_by", "updated_at"])
+        # Whoever reports it, the strike goes to the other person: they are the one who did not show up.
+        absent = req.ride.driver if user.id == req.rider_id else req.rider
+        trust_services.record_strike(absent, Strike.Reason.NO_SHOW, req)
         return req
 
 

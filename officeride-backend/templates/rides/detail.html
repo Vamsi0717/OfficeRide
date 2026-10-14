@@ -14,7 +14,7 @@
       <dt class="col-5">Toll</dt><dd class="col-7">&#8377;{{ ride.toll_total }} for the whole trip</dd>
       <dt class="col-5">Status</dt><dd class="col-7">{% if ride.is_active %}<span class="badge text-bg-success">Live</span>{% else %}<span class="badge text-bg-secondary">Off</span>{% endif %}</dd>
     {% else %}
-      <dt class="col-5">Driver</dt><dd class="col-7">{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}. <span class="badge text-bg-success">Documents verified</span></dd>
+      <dt class="col-5">Driver</dt><dd class="col-7">{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}. <span class="badge text-bg-success">Documents verified</span> {% include "trust/_stats.html" with stats=driver_stats %}</dd>
     {% endif %}
   </dl>
 
