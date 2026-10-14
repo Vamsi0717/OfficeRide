@@ -77,6 +77,12 @@ class RideRequest(models.Model):
     reported_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
     )
+    # The spot the two people agreed on in chat. Empty until someone confirms it.
+    agreed_pickup = models.CharField(max_length=120, blank=True)
+    agreed_pickup_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+    )
+    agreed_pickup_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     decided_at = models.DateTimeField(null=True, blank=True)

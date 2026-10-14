@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
   <h3>My trips</h3>
+  {% if unread_total %}<div class="alert alert-info py-2">You have {{ unread_total }} unread message{{ unread_total|pluralize }}.</div>{% endif %}
 
   <h5 class="mt-4">Rides I requested</h5>
   {% for req in requested %}

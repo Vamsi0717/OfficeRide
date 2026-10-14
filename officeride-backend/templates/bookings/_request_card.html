@@ -13,6 +13,10 @@
     <div class="mt-1"><span class="fw-semibold">&#8377;{{ req.fare }}</span>
       {% if req.fare_adjustment %}<span class="text-muted small">(standard &#8377;{{ req.standard_fare }}, driver changed it by {{ req.fare_adjustment }})</span>{% endif %}
     </div>
+    {% if req.agreed_pickup %}<div class="small mt-1">Meeting spot: <strong>{{ req.agreed_pickup }}</strong></div>{% endif %}
+    {% if req.status == 'pending' or req.status == 'accepted' or req.chat_total %}
+      <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'chat:thread' req.pk %}">{% if req.status == 'pending' or req.status == 'accepted' %}Chat{% else %}View chat{% endif %}{% if req.chat_unread %} <span class="badge text-bg-danger">{{ req.chat_unread }}</span>{% endif %}</a></div>
+    {% endif %}
     {% if req.late_cancel %}<div class="small text-danger mt-1">Cancelled late, less than an hour before departure.</div>{% endif %}
     {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
       <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}">Request the ride back</a></div>

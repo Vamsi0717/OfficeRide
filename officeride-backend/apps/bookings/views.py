@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 
 from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
+from apps.chat import services as chat_services
 from apps.rides import matching
 from apps.trust import services as trust_services
 from apps.trust.models import Rating
@@ -53,10 +54,14 @@ def trips(request):
     requested = list(base.filter(rider=user)[:50])
     for_my_rides = list(base.filter(ride__driver=user)[:50])
     rated = set(Rating.objects.filter(rater=user, request__in=requested + for_my_rides).values_list("request_id", flat=True))
+    chat = chat_services.summary(user, [r.pk for r in requested + for_my_rides])
     for req in requested + for_my_rides:
         req.actions = services.allowed_actions(req, user)
         req.rated = req.pk in rated
-    return render(request, "bookings/trips.html", {"requested": requested, "for_my_rides": for_my_rides})
+        req.chat_total = chat.get(req.pk, {}).get("total", 0)
+        req.chat_unread = chat.get(req.pk, {}).get("unread", 0)
+    unread_total = sum(r.chat_unread for r in requested + for_my_rides)
+    return render(request, "bookings/trips.html", {"requested": requested, "for_my_rides": for_my_rides, "unread_total": unread_total})
 
 
 @email_verified_required

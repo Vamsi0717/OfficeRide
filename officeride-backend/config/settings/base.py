@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.accounts",
     "apps.bookings",
+    "apps.chat",
     "apps.core",
     "apps.fares",
     "apps.rides",
@@ -148,3 +149,7 @@ STRIKE_WINDOW_DAYS = 90
 STRIKE_SUSPEND_AT = 3           # the 3rd active strike suspends the account
 STRIKE_REVIEW_AT = 5            # the 5th sends the account to an admin
 SUSPENSION_DAYS = 7
+
+# Chat (Phase 6)
+CHAT_MAX_CHARS = 500            # one message
+CHAT_MAX_MESSAGES = 200         # per booking, so a thread cannot be flooded

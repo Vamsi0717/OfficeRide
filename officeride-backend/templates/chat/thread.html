@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+  <h3 class="mb-1">Chat with {{ other.first_name }} {{ other.last_name|slice:":1" }}.</h3>
+  <p class="text-muted small">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }} on {{ req.date|date:"D j M Y" }} at {{ req.ride.departure_time|time:"g:i A" }}
+    &middot; <span class="badge text-bg-secondary">{{ req.get_status_display }}</span></p>
+  <p class="small text-muted">Phone numbers and emails are never shown here. Keep to the ride.</p>
+
+  {% if req.agreed_pickup %}
+    <div class="alert alert-success py-2">Pickup point: <strong>{{ req.agreed_pickup }}</strong></div>
+  {% endif %}
+
+  <div class="border rounded p-2 mb-3" style="max-height: 24rem; overflow-y: auto;">
+    {% for m in thread %}
+      <div class="d-flex {% if m.sender_id == user.id %}justify-content-end{% endif %} mb-2">
+        <div class="px-2 py-1 rounded {% if m.sender_id == user.id %}bg-primary text-white{% else %}bg-light border{% endif %}" style="max-width: 80%;">
+          <div class="small {% if m.sender_id == user.id %}text-white-50{% else %}text-muted{% endif %}">{% if m.sender_id == user.id %}You{% else %}{{ m.sender.first_name }}{% endif %} &middot; {{ m.created_at|date:"j M, g:i A" }}</div>
+          <div>{{ m.text }}</div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted small m-2">No messages yet.</p>
+    {% endfor %}
+  </div>
+
+  {% if can_write %}
+    <div class="d-flex gap-2 flex-wrap mb-3">
+      {% for key, text in quick.items %}
+        <form method="post" action="{% url 'chat:quick' req.pk key %}" class="m-0">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-secondary">{{ text }}</button>
+        </form>
+      {% endfor %}
+    </div>
+    <form method="post" class="d-flex gap-2 mb-4">
+      {% csrf_token %}
+      {{ form.text }}
+      <button class="btn btn-primary">Send</button>
+    </form>
+    <form method="post" action="{% url 'chat:confirm_pickup' req.pk %}" class="mb-3">
+      {% csrf_token %}
+      <label class="form-label small mb-1" for="id_spot">Confirm the pickup point you agreed on</label>
+      <div class="d-flex gap-2">
+        <input class="form-control form-control-sm" id="id_spot" name="spot" maxlength="120" value="{{ req.agreed_pickup|default:req.pickup_name }}" required>
+        <button class="btn btn-sm btn-success">Confirm pickup point</button>
+      </div>
+    </form>
+  {% else %}
+    <div class="alert alert-secondary">This chat is closed because the ride is {{ req.get_status_display|lower }}. You can still read it.</div>
+  {% endif %}
+  <a href="{% url 'chat:thread' req.pk %}" class="btn btn-sm btn-outline-secondary">Refresh</a>
+  <a href="{% url 'bookings:trips' %}" class="btn btn-sm btn-link">Back to My trips</a>
+{% endblock %}
