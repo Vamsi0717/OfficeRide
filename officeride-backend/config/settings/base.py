@@ -153,3 +153,4 @@ SUSPENSION_DAYS = 7
 # Chat (Phase 6)
 CHAT_MAX_CHARS = 500            # one message
 CHAT_MAX_MESSAGES = 200         # per booking, so a thread cannot be flooded
+CALL_WINDOW_DAYS = 1            # the call button works from the ride day until this many days ahead (1 = today and tomorrow)

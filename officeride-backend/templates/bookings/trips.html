@@ -1,19 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
-  <h3>My trips</h3>
-  {% if unread_total %}<div class="alert alert-info py-2">You have {{ unread_total }} unread message{{ unread_total|pluralize }}.</div>{% endif %}
+  <h3 class="mb-3"><i class="bi bi-signpost-2"></i> My trips</h3>
 
-  <h5 class="mt-4">Rides I requested</h5>
-  {% for req in requested %}
-    {% include "bookings/_request_card.html" with req=req as_driver=False %}
-  {% empty %}
-    <p class="text-muted">You have not requested a ride yet. <a href="{% url 'rides:find' %}">Find a ride</a>.</p>
-  {% endfor %}
+  {% if unread_total %}
+    <div class="alert alert-info py-2"><i class="bi bi-chat-dots-fill"></i> You have {{ unread_total }} unread message{{ unread_total|pluralize }}.</div>
+  {% endif %}
+  {% if needs_phone %}
+    <div class="alert alert-warning py-2"><i class="bi bi-telephone"></i> Add your phone number in your <a href="{% url 'accounts:profile' %}">profile</a> so your ride partner can call you.</div>
+  {% endif %}
 
-  <h5 class="mt-4">Requests for my rides</h5>
-  {% for req in for_my_rides %}
-    {% include "bookings/_request_card.html" with req=req as_driver=True %}
+  <ul class="nav nav-pills nav-fill mb-3">
+    <li class="nav-item">
+      <a class="nav-link {% if tab == 'riding' %}active{% endif %}" href="{% url 'bookings:trips' %}?view=riding">
+        <i class="bi bi-person-raised-hand"></i> I'm riding
+        {% if riding_counts.active %}<span class="badge text-bg-light text-dark">{{ riding_counts.active }}</span>{% endif %}
+        {% if riding_unread %}<span class="badge text-bg-danger"><i class="bi bi-chat-dots-fill"></i> {{ riding_unread }}</span>{% endif %}
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if tab == 'driving' %}active{% endif %}" href="{% url 'bookings:trips' %}?view=driving">
+        <i class="bi bi-car-front-fill"></i> I'm driving
+        {% if driving_counts.waiting %}<span class="badge text-bg-warning">{{ driving_counts.waiting }} to answer</span>
+        {% elif driving_counts.active %}<span class="badge text-bg-light text-dark">{{ driving_counts.active }}</span>{% endif %}
+        {% if driving_unread %}<span class="badge text-bg-danger"><i class="bi bi-chat-dots-fill"></i> {{ driving_unread }}</span>{% endif %}
+      </a>
+    </li>
+  </ul>
+  <p class="small text-muted">
+    {% if tab == 'riding' %}Rides where you asked for a seat on someone else's car or bike.{% else %}Requests from people who want a seat on the rides you offer. Your offered rides are under <a href="{% url 'rides:mine' %}">Rides I offer</a>.{% endif %}
+  </p>
+
+  <div class="row g-2 mb-3 text-center">
+    <div class="col-4"><div class="border rounded py-2"><div class="fs-4 fw-bold">{{ counts.today }}</div><div class="small text-muted">Today</div></div></div>
+    <div class="col-4"><div class="border rounded py-2"><div class="fs-4 fw-bold">{{ counts.tomorrow }}</div><div class="small text-muted">Tomorrow</div></div></div>
+    <div class="col-4"><div class="border rounded py-2 {% if counts.waiting %}border-warning bg-warning-subtle{% endif %}"><div class="fs-4 fw-bold">{{ counts.waiting }}</div><div class="small text-muted">Waiting</div></div></div>
+  </div>
+
+  {% for section in sections %}
+    {% if section.collapsed %}
+      <details class="mb-3">
+        <summary class="fw-semibold section-title">{{ section.title }} <span class="badge text-bg-secondary">{{ section.items|length }}</span></summary>
+        <div class="mt-2">
+          {% for req in section.items %}{% include "bookings/_request_card.html" with req=req as_driver=is_driving %}{% endfor %}
+        </div>
+      </details>
+    {% else %}
+      <h5 class="mt-4 mb-1 d-flex align-items-center gap-2">
+        {% if section.key == 'update' %}<i class="bi bi-exclamation-triangle-fill text-danger"></i>
+        {% elif section.key == 'pending' %}<i class="bi bi-hourglass-split text-warning"></i>
+        {% elif section.key == 'today' %}<i class="bi bi-sun-fill text-warning"></i>
+        {% elif section.key == 'tomorrow' %}<i class="bi bi-sunrise-fill text-primary"></i>
+        {% else %}<i class="bi bi-calendar-event text-primary"></i>{% endif %}
+        {{ section.title }} <span class="badge text-bg-secondary">{{ section.items|length }}</span>
+      </h5>
+      {% if section.hint %}<p class="small text-muted mb-2">{{ section.hint }}</p>{% endif %}
+      {% for req in section.items %}{% include "bookings/_request_card.html" with req=req as_driver=is_driving %}{% endfor %}
+    {% endif %}
   {% empty %}
-    <p class="text-muted">No one has asked for a seat on your rides yet.</p>
+    <div class="text-center text-muted py-5 border rounded">
+      {% if tab == 'riding' %}
+        <i class="bi bi-search fs-1"></i>
+        <p class="mt-2">You have not asked for a ride yet.</p>
+        <a class="btn btn-primary" href="{% url 'rides:find' %}">Find a ride</a>
+      {% else %}
+        <i class="bi bi-inbox fs-1"></i>
+        <p class="mt-2">No one has asked for a seat on your rides yet.</p>
+        <a class="btn btn-primary" href="{% url 'rides:offer' %}">Offer a ride</a>
+      {% endif %}
+    </div>
   {% endfor %}
 {% endblock %}

@@ -65,7 +65,14 @@ def my_rides(request):
     rates = fare_services.load_rates()
     for ride in rides:
         ride.full_fare = fare_services.full_route_fare(ride, rates)
-    return render(request, "rides/mine.html", {"rides": rides})
+    services.attach_booking_summary(rides)
+    context = {
+        "live": [r for r in rides if r.is_active],
+        "off": [r for r in rides if not r.is_active],
+        "waiting_total": sum(r.waiting for r in rides),
+        "has_rides": bool(rides),
+    }
+    return render(request, "rides/mine.html", context)
 
 
 @driver_required

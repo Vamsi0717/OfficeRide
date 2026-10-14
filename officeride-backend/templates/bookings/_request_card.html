@@ -1,33 +1,61 @@
-<div class="card mb-3">
-  <div class="card-body">
-    <div class="d-flex justify-content-between">
-      <div class="fw-semibold">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }}</div>
-      <span class="badge text-bg-{% if req.status == 'accepted' or req.status == 'completed' %}success{% elif req.status == 'pending' %}warning{% else %}secondary{% endif %}">{{ req.get_status_display }}</span>
+<div class="card mb-2 border-start border-4 {% if req.status == 'accepted' %}border-success{% elif req.status == 'pending' %}border-warning{% elif req.status == 'completed' %}border-primary{% elif req.status == 'no_show' %}border-danger{% else %}border-secondary{% endif %}">
+  <div class="card-body py-2">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <span class="fs-5 fw-bold">{{ req.ride.departure_time|time:"g:i A" }}</span>
+        <span class="text-muted ms-1">{{ req.date|date:"D j M" }}</span>
+      </div>
+      <span class="badge rounded-pill text-bg-{% if req.status == 'accepted' %}success{% elif req.status == 'pending' %}warning{% elif req.status == 'completed' %}primary{% elif req.status == 'no_show' %}danger{% else %}secondary{% endif %}">
+        {% if req.status == 'accepted' %}<i class="bi bi-check-circle"></i>{% elif req.status == 'pending' %}<i class="bi bi-hourglass-split"></i>{% elif req.status == 'completed' %}<i class="bi bi-check2-all"></i>{% elif req.status == 'no_show' %}<i class="bi bi-person-x"></i>{% else %}<i class="bi bi-x-circle"></i>{% endif %}
+        {{ req.get_status_display }}
+      </span>
     </div>
-    <div>{{ req.date|date:"D j M Y" }} at {{ req.ride.departure_time|time:"g:i A" }}
-      <span class="text-muted small">&middot; {{ req.ride.get_vehicle_type_display }}</span></div>
-    <div class="small text-muted mt-1">
-      {% if as_driver %}Rider {{ req.rider.first_name }} {{ req.rider.last_name|slice:":1" }}. &middot; {% else %}Driver {{ req.ride.driver.first_name }} {{ req.ride.driver.last_name|slice:":1" }}. &middot; {% endif %}
-      Pickup: {{ req.pickup_name }} &middot; Drop: {{ req.drop_name }}
+
+    <div class="fw-semibold mt-1">
+      <i class="bi {% if req.ride.is_bike %}bi-scooter{% else %}bi-car-front{% endif %} text-muted" title="{{ req.ride.get_vehicle_type_display }}"></i>
+      {{ req.ride.origin_name }} <i class="bi bi-arrow-right text-muted"></i> {{ req.ride.destination_name }}
     </div>
-    <div class="mt-1"><span class="fw-semibold">&#8377;{{ req.fare }}</span>
-      {% if req.fare_adjustment %}<span class="text-muted small">(standard &#8377;{{ req.standard_fare }}, driver changed it by {{ req.fare_adjustment }})</span>{% endif %}
+    <div class="small text-muted">
+      <i class="bi bi-geo-alt"></i> Pickup: {{ req.pickup_name }} &middot; Drop: {{ req.drop_name }}
     </div>
-    {% if req.agreed_pickup %}<div class="small mt-1">Meeting spot: <strong>{{ req.agreed_pickup }}</strong></div>{% endif %}
-    {% if req.status == 'pending' or req.status == 'accepted' or req.chat_total %}
-      <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'chat:thread' req.pk %}">{% if req.status == 'pending' or req.status == 'accepted' %}Chat{% else %}View chat{% endif %}{% if req.chat_unread %} <span class="badge text-bg-danger">{{ req.chat_unread }}</span>{% endif %}</a></div>
-    {% endif %}
-    {% if req.late_cancel %}<div class="small text-danger mt-1">Cancelled late, less than an hour before departure.</div>{% endif %}
+    {% if req.agreed_pickup %}<div class="small mt-1"><i class="bi bi-pin-map-fill text-success"></i> Meeting spot: <strong>{{ req.agreed_pickup }}</strong></div>{% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mt-2">
+      <div>
+        <div><i class="bi bi-person-circle"></i> {% if as_driver %}Rider{% else %}Driver{% endif %}: {{ req.other.first_name }} {{ req.other.last_name|slice:":1" }}.</div>
+        <div><span class="fw-semibold">&#8377;{{ req.fare }}</span>
+          {% if req.fare_adjustment %}<span class="text-muted small">(standard &#8377;{{ req.standard_fare }}, driver changed it by {{ req.fare_adjustment }})</span>{% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        {% if req.status == 'accepted' and req.can_call %}
+          {% if req.other_has_phone %}
+            <a class="btn btn-success rounded-circle" style="width:2.5rem;height:2.5rem;padding:0;line-height:2.5rem" href="{% url 'chat:call' req.pk %}" title="Call {{ req.other.first_name }}" aria-label="Call {{ req.other.first_name }}"><i class="bi bi-telephone-fill"></i></a>
+          {% else %}
+            <span class="btn btn-outline-secondary rounded-circle disabled" style="width:2.5rem;height:2.5rem;padding:0;line-height:2.5rem" title="{{ req.other.first_name }} has not added a phone number" aria-label="No phone number"><i class="bi bi-telephone-x"></i></span>
+          {% endif %}
+        {% endif %}
+        {% if req.status == 'pending' or req.status == 'accepted' or req.chat_total %}
+          <a class="btn btn-primary rounded-circle position-relative" style="width:2.5rem;height:2.5rem;padding:0;line-height:2.5rem" href="{% url 'chat:thread' req.pk %}"
+             title="{% if req.status == 'pending' or req.status == 'accepted' %}Chat{% else %}View chat{% endif %}" aria-label="{% if req.status == 'pending' or req.status == 'accepted' %}Chat{% else %}View chat{% endif %}">
+            <i class="bi bi-chat-dots-fill"></i>
+            {% if req.chat_unread %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger">{{ req.chat_unread }}</span>{% endif %}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if req.late_cancel %}<div class="small text-danger mt-1"><i class="bi bi-exclamation-triangle"></i> Cancelled late, less than an hour before departure.</div>{% endif %}
     {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
-      <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}">Request the ride back</a></div>
+      <div class="mt-2"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}"><i class="bi bi-arrow-repeat"></i> Request the ride back</a></div>
     {% endif %}
     {% if req.status == 'completed' or req.status == 'cancelled' or req.status == 'no_show' %}
       <div class="d-flex gap-2 flex-wrap mt-2">
         {% if req.status == 'completed' %}
-          {% if req.rated %}<span class="badge text-bg-light border align-self-center">You rated this ride</span>
-          {% else %}<a class="btn btn-sm btn-outline-warning" href="{% url 'trust:rate' req.pk %}">Rate this ride</a>{% endif %}
+          {% if req.rated %}<span class="badge text-bg-light border align-self-center"><i class="bi bi-star-fill text-warning"></i> You rated this ride</span>
+          {% else %}<a class="btn btn-sm btn-warning" href="{% url 'trust:rate' req.pk %}"><i class="bi bi-star"></i> Rate this ride</a>{% endif %}
         {% endif %}
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'trust:report' req.pk %}">Report a problem</a>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'trust:report' req.pk %}"><i class="bi bi-flag"></i> Report a problem</a>
       </div>
     {% endif %}
     {% if req.actions %}
@@ -36,7 +64,7 @@
           <form method="post" action="{% url 'bookings:act' req.pk action %}" class="m-0">
             {% csrf_token %}
             <button class="btn btn-sm {% if action == 'accept' or action == 'complete' %}btn-success{% elif action == 'reject' or action == 'cancel' %}btn-outline-danger{% else %}btn-outline-secondary{% endif %}">
-              {% if action == 'accept' %}Accept{% elif action == 'reject' %}Reject{% elif action == 'cancel' %}Cancel{% elif action == 'complete' %}Mark completed{% else %}Report no-show{% endif %}
+              {% if action == 'accept' %}<i class="bi bi-check-lg"></i> Accept{% elif action == 'reject' %}<i class="bi bi-x-lg"></i> Reject{% elif action == 'cancel' %}<i class="bi bi-x-circle"></i> Cancel{% elif action == 'complete' %}<i class="bi bi-check2-all"></i> Mark completed{% else %}<i class="bi bi-person-x"></i> Report no-show{% endif %}
             </button>
           </form>
         {% endfor %}

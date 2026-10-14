@@ -1,0 +1,58 @@
+<div class="card mb-3 border-start border-4 {% if ride.is_active %}border-success{% else %}border-secondary{% endif %}">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <span class="fs-5 fw-bold">{{ ride.departure_time|time:"g:i A" }}</span>
+        <span class="text-muted ms-1">{{ ride.office_days_display }}</span>
+      </div>
+      {% if ride.is_active %}<span class="badge rounded-pill text-bg-success"><i class="bi bi-broadcast"></i> Live</span>{% else %}<span class="badge rounded-pill text-bg-secondary"><i class="bi bi-pause-circle"></i> Off</span>{% endif %}
+    </div>
+    <div class="fw-semibold mt-1">
+      <i class="bi {% if ride.is_bike %}bi-scooter{% else %}bi-car-front{% endif %} text-muted"></i>
+      {{ ride.origin_name }} <i class="bi bi-arrow-right text-muted"></i> {{ ride.destination_name }}
+    </div>
+    <div class="small text-muted">{{ ride.car_model }} &middot; {{ ride.seats }} seat{{ ride.seats|pluralize }} &middot; {{ ride.distance_km }} km, about {{ ride.duration_min }} min</div>
+    {% if ride.full_fare %}<div class="small mt-1"><i class="bi bi-currency-rupee"></i>Each rider pays &#8377;{{ ride.full_fare.total }} for the full route.</div>{% endif %}
+
+    {% if ride.is_active %}
+      <div class="row g-2 text-center mt-2">
+        <div class="col-4"><div class="border rounded py-1">
+          <div class="small text-muted">Today</div>
+          <div class="fw-semibold">{% if ride.runs_today %}{{ ride.booked_today }} of {{ ride.seats }}{% else %}<span class="text-muted">No ride</span>{% endif %}</div>
+        </div></div>
+        <div class="col-4"><div class="border rounded py-1">
+          <div class="small text-muted">Tomorrow</div>
+          <div class="fw-semibold">{% if ride.runs_tomorrow %}{{ ride.booked_tomorrow }} of {{ ride.seats }}{% else %}<span class="text-muted">No ride</span>{% endif %}</div>
+        </div></div>
+        <div class="col-4"><div class="border rounded py-1">
+          <div class="small text-muted">Next booked</div>
+          <div class="fw-semibold">{% if ride.next_booked %}{{ ride.next_booked.0|date:"D j M" }}{% else %}<span class="text-muted">None</span>{% endif %}</div>
+        </div></div>
+      </div>
+      <div class="small text-muted mt-1">Seats booked on each day.</div>
+    {% endif %}
+    {% if ride.waiting %}
+      <a class="alert alert-warning py-1 px-2 mt-2 mb-0 d-block small text-decoration-none" href="{% url 'bookings:trips' %}?view=driving"><i class="bi bi-hourglass-split"></i> {{ ride.waiting }} request{{ ride.waiting|pluralize }} waiting for your reply. Review</a>
+    {% endif %}
+
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+      <a class="btn btn-sm btn-primary" href="{% url 'rides:detail' ride.pk %}"><i class="bi bi-eye"></i> Details</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'rides:edit' ride.pk %}"><i class="bi bi-pencil-square"></i> Edit</a>
+      <form method="post" action="{% url 'rides:toggle' ride.pk %}" class="m-0">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-outline-secondary">{% if ride.is_active %}<i class="bi bi-pause-circle"></i> Switch off{% else %}<i class="bi bi-play-circle"></i> Switch on{% endif %}</button>
+      </form>
+    </div>
+    {% if user.can_offer_rides %}
+      <details class="mt-2">
+        <summary class="small text-primary">Offer the same ride back</summary>
+        <form method="post" action="{% url 'rides:offer_back' ride.pk %}" class="d-flex gap-2 align-items-center mt-2">
+          {% csrf_token %}
+          <label class="small text-muted" for="back-{{ ride.pk }}">Leaving at</label>
+          <input class="form-control form-control-sm w-auto" type="time" name="return_time" id="back-{{ ride.pk }}" required>
+          <button class="btn btn-sm btn-outline-primary">Offer back</button>
+        </form>
+      </details>
+    {% endif %}
+  </div>
+</div>

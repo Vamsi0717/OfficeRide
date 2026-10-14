@@ -174,3 +174,36 @@ def delete_ride(ride):
     ride.deleted_at = timezone.now()
     ride.save(update_fields=["is_active", "deleted_at"])
     return cancelled
+
+
+def attach_booking_summary(rides):
+    """Sets, on each ride: runs_today, runs_tomorrow, booked_today, booked_tomorrow, waiting (requests nobody
+    answered yet) and next_booked ((date, riders) for the next day after tomorrow with an accepted rider, or None).
+
+    Two kinds of rows are read in one query however many rides there are."""
+    from datetime import timedelta
+
+    from django.db.models import Count
+
+    from apps.bookings.models import RideRequest
+
+    today = timezone.localdate()
+    tomorrow = today + timedelta(days=1)
+    rows = (
+        RideRequest.objects.filter(ride__in=rides, status__in=RideRequest.ACTIVE, date__gte=today)
+        .values("ride_id", "date", "status").annotate(n=Count("id"))
+    )
+    accepted, waiting = {}, {}
+    for row in rows:
+        if row["status"] == RideRequest.Status.ACCEPTED:
+            accepted.setdefault(row["ride_id"], {})[row["date"]] = row["n"]
+        else:
+            waiting[row["ride_id"]] = waiting.get(row["ride_id"], 0) + row["n"]
+    for ride in rides:
+        days = accepted.get(ride.pk, {})
+        ride.runs_today, ride.runs_tomorrow = ride.runs_on(today), ride.runs_on(tomorrow)
+        ride.booked_today, ride.booked_tomorrow = days.get(today, 0), days.get(tomorrow, 0)
+        ride.waiting = waiting.get(ride.pk, 0)
+        later = sorted(d for d in days if d > tomorrow)
+        ride.next_booked = (later[0], days[later[0]]) if later else None
+    return rides

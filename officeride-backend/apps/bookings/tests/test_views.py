@@ -143,7 +143,7 @@ class TripsPageTests(TestCase):
     def test_the_rider_sees_the_request_with_cancel_only(self):
         self.client.force_login(self.rider)
         response = self.client.get(reverse("bookings:trips"))
-        self.assertContains(response, "Rides I requested")
+        self.assertContains(response, "I'm riding")
         self.assertContains(response, "Waiting for the driver")
         self.assertContains(response, reverse("bookings:act", args=[self.req.pk, "cancel"]))
         self.assertNotContains(response, reverse("bookings:act", args=[self.req.pk, "accept"]))

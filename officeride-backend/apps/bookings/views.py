@@ -13,6 +13,7 @@ from apps.trust import services as trust_services
 from apps.trust.models import Rating
 
 from . import planner, services
+from . import trips as trip_groups
 from .forms import BackSearchForm, OverrideForm, RequestSeatForm, WeeklyPlanForm
 from .models import PlanDay, RideRequest
 
@@ -49,19 +50,42 @@ def request_seat(request, ride_pk):
 
 @email_verified_required
 def trips(request):
+    """My trips: two tabs, Riding (seats I asked for) and Driving (people who asked for a seat on my rides)."""
     user = request.user
     base = RideRequest.objects.select_related("ride", "ride__driver", "rider")
-    requested = list(base.filter(rider=user)[:50])
-    for_my_rides = list(base.filter(ride__driver=user)[:50])
-    rated = set(Rating.objects.filter(rater=user, request__in=requested + for_my_rides).values_list("request_id", flat=True))
-    chat = chat_services.summary(user, [r.pk for r in requested + for_my_rides])
-    for req in requested + for_my_rides:
-        req.actions = services.allowed_actions(req, user)
-        req.rated = req.pk in rated
-        req.chat_total = chat.get(req.pk, {}).get("total", 0)
-        req.chat_unread = chat.get(req.pk, {}).get("unread", 0)
-    unread_total = sum(r.chat_unread for r in requested + for_my_rides)
-    return render(request, "bookings/trips.html", {"requested": requested, "for_my_rides": for_my_rides, "unread_total": unread_total})
+    riding = list(base.filter(rider=user)[:100])
+    driving = list(base.filter(ride__driver=user)[:100])
+    everything = riding + driving
+    rated = set(Rating.objects.filter(rater=user, request__in=everything).values_list("request_id", flat=True))
+    chat = chat_services.summary(user, [r.pk for r in everything])
+    for reqs, other_is_driver in ((riding, True), (driving, False)):
+        for req in reqs:
+            req.other = req.ride.driver if other_is_driver else req.rider
+            req.actions = services.allowed_actions(req, user)
+            req.rated = req.pk in rated
+            req.chat_total = chat.get(req.pk, {}).get("total", 0)
+            req.chat_unread = chat.get(req.pk, {}).get("unread", 0)
+            req.can_call = chat_services.call_window_open(req)
+            req.other_has_phone = len(req.other.phone) == 10
+    now = timezone.now()
+    riding_sections = trip_groups.group(riding, as_driver=False, now=now)
+    driving_sections = trip_groups.group(driving, as_driver=True, now=now)
+    riding_counts, driving_counts = trip_groups.counts(riding_sections), trip_groups.counts(driving_sections)
+
+    tab = request.GET.get("view")
+    if tab not in ("riding", "driving"):
+        # Open on the side that needs attention: people waiting for my reply, or the only side I use.
+        tab = "driving" if driving_counts["waiting"] or (driving and not riding) else "riding"
+    context = {
+        "tab": tab, "is_driving": tab == "driving",
+        "sections": driving_sections if tab == "driving" else riding_sections,
+        "counts": driving_counts if tab == "driving" else riding_counts,
+        "riding_counts": riding_counts, "driving_counts": driving_counts,
+        "riding_unread": sum(r.chat_unread for r in riding), "driving_unread": sum(r.chat_unread for r in driving),
+        "unread_total": sum(r.chat_unread for r in everything),
+        "needs_phone": not user.phone and any(r.status == RideRequest.Status.ACCEPTED for r in everything),
+    }
+    return render(request, "bookings/trips.html", context)
 
 
 @email_verified_required

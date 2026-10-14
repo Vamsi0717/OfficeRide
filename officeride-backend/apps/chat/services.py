@@ -1,6 +1,8 @@
 """Chat rules. A thread belongs to one booking. Only its two people can read or write, and it can be
 written to only while the booking is pending or accepted; afterwards it stays readable."""
 
+from datetime import timedelta
+
 from django.conf import settings
 from django.db.models import Count, F, OuterRef, Q, Subquery
 from django.utils import timezone
@@ -70,6 +72,27 @@ def confirm_pickup(req, user, spot):
     req.agreed_pickup_at = timezone.now()
     req.save(update_fields=["agreed_pickup", "agreed_pickup_by", "agreed_pickup_at", "updated_at"])
     return send(req, user, f"Pickup point confirmed: {spot}")
+
+
+def call_window_open(req):
+    """The call button works for an accepted booking whose ride day is today, or at most CALL_WINDOW_DAYS ahead."""
+    today = timezone.localdate()
+    return req.status == RideRequest.Status.ACCEPTED and today <= req.date <= today + timedelta(days=settings.CALL_WINDOW_DAYS)
+
+
+def call_number(req, user):
+    """The other person's 10 digit phone number, only for the two people on an accepted booking around the ride day.
+
+    The number is never put on a page. The Call button goes through a view that checks these rules at the moment of the tap."""
+    if not is_participant(req, user):
+        raise ChatError("This booking is not yours.")
+    other = other_person(req, user)
+    if not call_window_open(req):
+        raise ChatError("Calling opens for an accepted ride from the day it runs.")
+    number = (other.phone or "").strip()
+    if len(number) != 10 or not number.isdigit():
+        raise ChatError(f"{other.first_name} has not added a phone number yet. Use chat instead.")
+    return number
 
 
 def mark_read(req, user):

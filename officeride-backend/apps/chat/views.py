@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -9,6 +10,12 @@ from apps.bookings.models import RideRequest
 from . import services
 from .forms import MessageForm, PickupForm
 from .models import Message
+
+
+class TelRedirect(HttpResponseRedirect):
+    """Django only redirects to http and https unless told otherwise."""
+
+    allowed_schemes = ["tel"]
 
 
 def _my_request(request, pk):
@@ -38,6 +45,7 @@ def thread(request, pk):
     context = {
         "req": req, "other": services.other_person(req, request.user), "thread": thread_messages,
         "form": MessageForm(), "can_write": services.can_write(req), "quick": services.QUICK_REPLIES,
+        "can_call": services.call_window_open(req) and len(services.other_person(req, request.user).phone) == 10,
     }
     return render(request, "chat/thread.html", context)
 
@@ -67,3 +75,15 @@ def confirm_pickup(request, pk):
     else:
         messages.success(request, "Pickup point confirmed.")
     return redirect("chat:thread", pk=req.pk)
+
+
+@email_verified_required
+def call(request, pk):
+    """Opens the phone's dialler with the other person's number, after checking the rules."""
+    req = _my_request(request, pk)
+    try:
+        number = services.call_number(req, request.user)
+    except services.ChatError as exc:
+        messages.error(request, str(exc))
+        return redirect("bookings:trips")
+    return TelRedirect(f"tel:+91{number}")
