@@ -5,9 +5,6 @@
   {% if unread_total %}
     <div class="alert alert-info py-2"><i class="bi bi-chat-dots-fill"></i> You have {{ unread_total }} unread message{{ unread_total|pluralize }}.</div>
   {% endif %}
-  {% if needs_phone %}
-    <div class="alert alert-warning py-2"><i class="bi bi-telephone"></i> Add your phone number in your <a href="{% url 'accounts:profile' %}">profile</a> so your ride partner can call you.</div>
-  {% endif %}
 
   <ul class="nav nav-pills nav-fill mb-3">
     <li class="nav-item">

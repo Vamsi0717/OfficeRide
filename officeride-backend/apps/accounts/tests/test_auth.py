@@ -14,6 +14,7 @@ class RegisterTests(TestCase):
             "first_name": "Anil",
             "last_name": "Kumar",
             "email": "anil@company.com",
+            "phone": "98765 43210",
             "techpark": "whitefield",
             "password1": "Str0ng-pass-91",
             "password2": "Str0ng-pass-91",

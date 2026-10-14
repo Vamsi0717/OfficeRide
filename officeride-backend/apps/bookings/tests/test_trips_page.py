@@ -230,11 +230,3 @@ class CallIconTests(TripsSetup, TestCase):
         page = self.client.get(self.url, {"view": "driving"})
         self.assertContains(page, 'aria-label="Chat"')
         self.assertContains(page, "bi-chat-dots-fill")
-
-    def test_a_person_without_a_phone_is_reminded_to_add_one(self):
-        self.booking(S.ACCEPTED, 3, rider=self.rider)
-        self.client.force_login(self.rider)
-        self.assertContains(self.client.get(self.url), "Add your phone number")
-        self.rider.phone = "9123456780"
-        self.rider.save()
-        self.assertNotContains(self.client.get(self.url), "Add your phone number")

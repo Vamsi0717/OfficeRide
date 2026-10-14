@@ -13,10 +13,36 @@ DOCUMENT_ACCEPT = ".pdf,.jpg,.jpeg,.png"
 ID_NUMBER_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9 /-]{3,29}$")
 
 
+def normalise_phone(raw):
+    """'+91 98765-43210', '098765 43210' and '9876543210' all become '9876543210'. Anything else is refused."""
+    raw = re.sub(r"[\s-]", "", raw or "")
+    if not raw:
+        raise forms.ValidationError("Enter your 10-digit mobile number.")
+    if raw.startswith("+91"):
+        raw = raw[3:]
+    elif raw.startswith("0"):
+        raw = raw[1:]
+    if not re.fullmatch(r"[6-9]\d{9}", raw):
+        raise forms.ValidationError("Enter a valid 10-digit Indian mobile number.")
+    return raw
+
+
+def phone_field():
+    # Wider than the stored 10 digits so "+91 98765 43210" can be typed; normalise_phone() tidies it.
+    return forms.CharField(
+        max_length=20, required=True, label="Mobile number",
+        help_text="10-digit mobile number. Only the person you share a ride with can call you, and only on the ride day.",
+        widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "tel", "placeholder": "98765 43210"}),
+        error_messages={"required": "Enter your 10-digit mobile number."},
+    )
+
+
 class RegisterForm(BootstrapFormMixin, UserCreationForm):
+    phone = phone_field()
+
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("first_name", "last_name", "email", "techpark")
+        fields = ("first_name", "last_name", "email", "phone", "techpark")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,6 +50,9 @@ class RegisterForm(BootstrapFormMixin, UserCreationForm):
             self.fields[name].required = True
         self.fields["email"].label = "Company email"
         self.fields["email"].help_text = "Personal addresses such as Gmail are not accepted."
+
+    def clean_phone(self):
+        return normalise_phone(self.cleaned_data.get("phone"))
 
     def clean_email(self):
         email = self.cleaned_data["email"].strip().lower()
@@ -57,8 +86,7 @@ class OTPForm(BootstrapFormMixin, forms.Form):
 
 
 class ProfileForm(BootstrapFormMixin, forms.ModelForm):
-    # Wider than the stored 10 digits so "+91 98765 43210" can be typed; clean_phone() tidies it.
-    phone = forms.CharField(max_length=20, required=False, label="Phone")
+    phone = phone_field()
 
     class Meta:
         model = User
@@ -68,19 +96,9 @@ class ProfileForm(BootstrapFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         for name in ("first_name", "last_name", "techpark"):
             self.fields[name].required = True
-        self.fields["phone"].help_text = "10-digit mobile number (optional)."
 
     def clean_phone(self):
-        raw = re.sub(r"[\s-]", "", self.cleaned_data.get("phone", ""))
-        if not raw:
-            return ""
-        if raw.startswith("+91"):
-            raw = raw[3:]
-        elif raw.startswith("0"):
-            raw = raw[1:]
-        if not re.fullmatch(r"[6-9]\d{9}", raw):
-            raise forms.ValidationError("Enter a valid 10-digit Indian mobile number.")
-        return raw
+        return normalise_phone(self.cleaned_data.get("phone"))
 
 
 class DriverDocumentForm(BootstrapFormMixin, forms.ModelForm):

@@ -83,7 +83,6 @@ def trips(request):
         "riding_counts": riding_counts, "driving_counts": driving_counts,
         "riding_unread": sum(r.chat_unread for r in riding), "driving_unread": sum(r.chat_unread for r in driving),
         "unread_total": sum(r.chat_unread for r in everything),
-        "needs_phone": not user.phone and any(r.status == RideRequest.Status.ACCEPTED for r in everything),
     }
     return render(request, "bookings/trips.html", context)
 
