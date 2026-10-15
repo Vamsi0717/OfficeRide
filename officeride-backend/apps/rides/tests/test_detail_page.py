@@ -69,48 +69,66 @@ class RideDetailDesignTests(TestCase):
         self.assertContains(self.page(self.driver), "This ride is switched off.")
 
 
-class TimePickerOnPagesTests(TestCase):
+class TimeWheelOnPagesTests(TestCase):
     def setUp(self):
         self.driver = make_driver()
         self.client.force_login(self.driver)
 
-    def test_offer_page_uses_the_dropdown_time_picker_for_both_times(self):
+    def test_offer_page_has_the_time_popup_for_both_times(self):
         page = self.client.get(reverse("rides:offer"))
         for name in ("departure_time", "return_time"):
             with self.subTest(name):
-                self.assertContains(page, f'name="{name}_0"')
-                self.assertContains(page, f'name="{name}_1"')
-                self.assertContains(page, f'name="{name}_2"')
-        self.assertNotContains(page, 'type="time"')
+                self.assertContains(page, f'name="{name}"')
+        self.assertContains(page, "data-time-wheel", count=2)
+        self.assertContains(page, "js/time_wheel.js")
+        self.assertNotContains(page, ">Hr<")
+        self.assertNotContains(page, "js/time_chips.js")
+
+    def test_the_way_back_has_evening_buttons_and_the_way_there_morning_ones(self):
+        page = self.client.get(reverse("rides:offer"))
+        self.assertContains(page, 'data-presets="08:00,09:00,10:00,12:00"')
+        self.assertContains(page, 'data-presets="16:00,17:00,18:00,19:00"')
 
     def test_find_page_uses_it_too(self):
         page = self.client.get(reverse("rides:find"))
-        self.assertContains(page, 'name="time_0"')
+        self.assertContains(page, 'name="time"')
         self.assertContains(page, "Around what time?")
-        self.assertNotContains(page, 'type="time"')
+        self.assertContains(page, 'data-presets="08:00,09:00,18:00,19:00"')
+        self.assertContains(page, "js/time_wheel.js")
 
     def test_edit_page_opens_on_the_rides_current_time(self):
         ride = car_ride(self.driver)
         page = self.client.get(reverse("rides:edit", args=[ride.pk]))
-        self.assertContains(page, 'name="departure_time_0"')
-        self.assertContains(page, '<option value="9" selected>9</option>')
-        self.assertContains(page, '<option value="AM" selected>AM</option>')
+        self.assertContains(page, 'name="departure_time" value="09:00"')
+        self.assertContains(page, "js/time_wheel.js")
 
-    def test_a_search_with_the_dropdowns_works(self):
+    def test_the_way_back_search_page_has_it(self):
+        from apps.bookings.tests.helpers import make_request
+
+        ride = car_ride(self.driver)
+        rider = make_user("rider3@acme.com")
+        from apps.bookings.models import RideRequest
+
+        booking = make_request(ride, rider, status=RideRequest.Status.ACCEPTED)
+        self.client.force_login(rider)
+        page = self.client.get(reverse("bookings:request_back", args=[booking.pk]))
+        self.assertContains(page, "data-time-wheel")
+        self.assertContains(page, 'value="18:00"')
+        self.assertContains(page, 'data-presets="16:00,17:00,18:00,19:00"')
+        self.assertContains(page, "js/time_wheel.js")
+
+    def test_a_search_with_the_popup_value_works(self):
         response = self.client.get(reverse("rides:find"), {
             "pickup_name": "A", "pickup_lat": "12.95", "pickup_lng": "77.61",
             "drop_name": "B", "drop_lat": "12.95", "drop_lng": "77.69",
-            "date": "2099-01-01", "time_0": "9", "time_1": "0", "time_2": "AM",
+            "date": "2099-01-01", "time": "09:00",
         })
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "This field is required")
 
-    def test_an_offer_with_the_dropdowns_saves_the_right_time(self):
+    def test_an_offer_with_the_popup_value_saves_the_right_time(self):
         from apps.rides.models import Ride
         from apps.rides.tests.test_views import offer_payload
 
-        data = offer_payload()
-        del data["departure_time"]
-        data.update({"departure_time_0": "8", "departure_time_1": "45", "departure_time_2": "AM"})
-        self.client.post(reverse("rides:offer"), data)
+        self.client.post(reverse("rides:offer"), offer_payload(departure_time="08:45"))
         self.assertEqual(Ride.objects.get().departure_time.strftime("%H:%M"), "08:45")

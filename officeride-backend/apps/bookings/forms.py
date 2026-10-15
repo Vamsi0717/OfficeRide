@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.core.forms import BootstrapFormMixin
-from apps.core.widgets import TimePickerWidget
+from apps.core.widgets import EVENING_PRESETS, TimeWheelWidget
 from apps.rides.forms import PlaceFieldsMixin
 
 from .models import PlanDay
@@ -73,7 +73,7 @@ class BackSearchForm(BootstrapFormMixin, forms.Form):
     WINDOWS = [("15", "Around that time (15 minutes either way)"), ("30", "30 minutes either way"), ("60", "1 hour either way")]
 
     date = forms.DateField(label="Date", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
-    time = forms.TimeField(label="Leaving around", widget=TimePickerWidget())
+    time = forms.TimeField(label="Leaving around", widget=TimeWheelWidget(presets=EVENING_PRESETS))
     window = forms.ChoiceField(label="How flexible", choices=WINDOWS, initial="15")
 
     def clean_date(self):

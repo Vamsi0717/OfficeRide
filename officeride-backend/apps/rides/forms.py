@@ -5,7 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from apps.core.forms import BootstrapFormMixin
-from apps.core.widgets import TimePickerWidget
+from apps.core.widgets import EVENING_PRESETS, SEARCH_PRESETS, TimeWheelWidget
 
 from . import geo
 from apps.fares.engine import MAX_ADJUSTMENT_RS
@@ -39,8 +39,8 @@ class PlaceFieldsMixin:
                 self.add_error(f"{prefix}_name", "OfficeRide works inside Bangalore only.")
 
 
-def _time_widget():
-    return TimePickerWidget()
+def _time_widget(presets=None):
+    return TimeWheelWidget(presets=presets) if presets else TimeWheelWidget()
 
 
 class VehicleModelSelect(forms.Select):
@@ -114,7 +114,7 @@ class OfferRideForm(VehiclePickerMixin, PlaceFieldsMixin, BootstrapFormMixin, fo
     )
     has_spare_helmet = forms.BooleanField(label="I will carry a spare helmet for the rider", required=False)
     offer_return = forms.BooleanField(label="Also offer the way back", required=False)
-    return_time = forms.TimeField(label="Leaving for the way back at", required=False, widget=_time_widget())
+    return_time = forms.TimeField(label="Leaving for the way back at", required=False, widget=_time_widget(EVENING_PRESETS))
 
     def __init__(self, *args, vehicle_type="car", **kwargs):
         super().__init__(*args, **kwargs)
@@ -226,7 +226,7 @@ class SearchForm(PlaceFieldsMixin, BootstrapFormMixin, forms.Form):
     drop_lng = PlaceFieldsMixin.place_fields()["lng"]
 
     date = forms.DateField(label="Date", widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"))
-    time = forms.TimeField(label="Around what time?", widget=_time_widget())
+    time = forms.TimeField(label="Around what time?", widget=_time_widget(SEARCH_PRESETS))
     vehicle = forms.ChoiceField(
         label="Vehicle",
         required=False,

@@ -303,4 +303,4 @@ class EditVehicleTests(TestCase):
         old = make_ride(self.driver, seats=3, mileage_rate=MileageRate.objects.get(make="", name="Sedan"))
         page = self.client.get(reverse("rides:edit", args=[old.pk]))
         self.assertEqual(page.status_code, 200)
-        self.assertContains(page, "Choose model")   
+        self.assertContains(page, "Choose model")

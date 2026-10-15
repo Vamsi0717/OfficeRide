@@ -64,4 +64,4 @@
     <a class="btn btn-link" href="{% url 'rides:detail' ride.pk %}">Cancel</a>
   </form>
 {% endblock %}
-{% block scripts %}{% load static %}<script src="{% static 'js/vehicle_picker.js' %}"></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/vehicle_picker.js' %}"></script><script src="{% static 'js/time_wheel.js' %}"></script>{% endblock %}
