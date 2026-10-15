@@ -7,7 +7,7 @@ from django.urls import reverse
 
 from apps.fares import engine, services
 from apps.rides.models import Ride
-from apps.rides.tests.helpers import get_rate, make_driver, make_ride, make_user
+from apps.rides.tests.helpers import get_model, get_rate, make_driver, make_ride, make_user
 from apps.rides.tests.test_views import offer_payload
 
 
@@ -116,8 +116,8 @@ class OfferAndShowTests(TestCase):
     def test_two_wheeler_driver_can_adjust_the_fare(self):
         self.client.force_login(make_driver("biker@acme.com", vehicle_type="bike"))
         self.client.post(self.offer_url, offer_payload(
-            seats="1", has_spare_helmet="on", car_model="Honda Activa",
-            mileage_rate=get_rate("bike").pk, fare_adjustment="-20"))
+            seats="1", has_spare_helmet="on", mileage_rate=get_model("bike").pk, make="Honda",
+            fare_adjustment="-20"))
         self.assertEqual(Ride.objects.get().fare_adjustment, -20)
 
     def test_ride_page_says_when_the_driver_changed_the_fare(self):

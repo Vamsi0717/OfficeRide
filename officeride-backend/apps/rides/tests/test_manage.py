@@ -8,7 +8,7 @@ from apps.bookings.models import RideRequest
 from apps.bookings.tests.helpers import bike_ride, car_ride, drop, future_monday, make_request, pickup
 from apps.rides import matching
 from apps.rides.models import Ride
-from apps.rides.tests.helpers import get_rate, make_driver, make_user, point_along
+from apps.rides.tests.helpers import get_model, get_rate, make_driver, make_user, point_along
 
 S = RideRequest.Status
 
@@ -18,8 +18,8 @@ def edit_data(ride, **overrides):
         "departure_time": ride.departure_time.strftime("%H:%M"),
         "office_days": ride.office_days.split(","),
         "seats": ride.seats,
-        "car_model": ride.car_model,
-        "mileage_rate": ride.mileage_rate_id,
+        "make": get_model(ride.vehicle_type).make,
+        "mileage_rate": get_model(ride.vehicle_type).pk,
         "toll_total": ride.toll_total,
         "fare_adjustment": ride.fare_adjustment,
     }
@@ -56,15 +56,18 @@ class EditTests(TestCase):
 
     def test_form_opens_with_current_values(self):
         page = self.client.get(self.url)
-        self.assertContains(page, "Maruti Swift")
+        self.assertContains(page, "Choose make")
+        self.assertContains(page, "Maruti Suzuki")
 
     def test_edit_saves_fare_toll_and_vehicle(self):
-        data = edit_data(self.ride, toll_total=40, fare_adjustment=-10, car_model="Honda City", seats=2)
+        city = get_model("car", "City")
+        data = edit_data(self.ride, toll_total=40, fare_adjustment=-10, make=city.make, mileage_rate=city.pk, seats=2)
         response = self.client.post(self.url, data)
         self.assertRedirects(response, reverse("rides:detail", args=[self.ride.pk]))
         self.ride.refresh_from_db()
         self.assertEqual((self.ride.toll_total, self.ride.fare_adjustment, self.ride.car_model, self.ride.seats),
                          (40, -10, "Honda City", 2))
+        self.assertEqual(self.ride.mileage_rate, city)
 
     def test_adjustment_over_limit_is_refused(self):
         response = self.client.post(self.url, edit_data(self.ride, fare_adjustment=21))
@@ -102,7 +105,7 @@ class EditTests(TestCase):
         self.assertEqual(self.ride.seats, 3)
 
     def test_vehicle_class_must_match_vehicle_type(self):
-        response = self.client.post(self.url, edit_data(self.ride, mileage_rate=get_rate("bike").pk))
+        response = self.client.post(self.url, edit_data(self.ride, mileage_rate=get_model("bike").pk))
         self.assertEqual(response.status_code, 200)
 
     def test_no_days_chosen_is_refused(self):

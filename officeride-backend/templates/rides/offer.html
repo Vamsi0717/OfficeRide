@@ -30,31 +30,27 @@
       {% for error in form.office_days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
     </div>
 
-    <div class="row">
+    <div class="row" data-vehicle-picker>
       <div class="col-6 mb-3">
         <label class="form-label" for="{{ form.seats.id_for_label }}">{{ form.seats.label }}</label>
         {{ form.seats }}
         {% for error in form.seats.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
       </div>
       <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.car_model.id_for_label }}">{{ form.car_model.label }}</label>
-        {{ form.car_model }}
-        {% for error in form.car_model.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.mileage_rate.id_for_label }}">{{ form.mileage_rate.label }}</label>
-        {{ form.mileage_rate }}
-        <div class="form-text">{{ form.mileage_rate.help_text }}</div>
-        {% for error in form.mileage_rate.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="col-6 mb-3">
         <label class="form-label" for="{{ form.toll_total.id_for_label }}">{{ form.toll_total.label }}</label>
         {{ form.toll_total }}
         <div class="form-text">{{ form.toll_total.help_text }}</div>
         {% for error in form.toll_total.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.make.id_for_label }}">{{ form.make.label }}</label>
+        {{ form.make }}
+        {% for error in form.make.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-6 mb-3">
+        <label class="form-label" for="{{ form.mileage_rate.id_for_label }}">{{ form.mileage_rate.label }}</label>
+        {{ form.mileage_rate }}
+        {% for error in form.mileage_rate.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
       </div>
     </div>
 
@@ -86,4 +82,4 @@
     <button class="btn btn-primary">Publish ride</button>
   </form>
 {% endblock %}
-{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script><script src="{% static 'js/vehicle_picker.js' %}"></script>{% endblock %}

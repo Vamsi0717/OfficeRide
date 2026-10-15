@@ -18,9 +18,10 @@ class StartingValuesTests(TestCase):
             (s.fuel_price_per_litre, s.car_wear_per_km, s.bike_wear_per_km, s.recovery_percent),
             (Decimal("103.00"), Decimal("2.00"), Decimal("0.80"), 90),
         )
+        self.assertEqual(s.traffic_cut_percent, 20)
 
     def test_car_and_two_wheeler_mileage_classes_exist(self):
-        rates = {(r.vehicle_type, r.name): r.km_per_litre for r in MileageRate.objects.all()}
+        rates = {(r.vehicle_type, r.name): r.km_per_litre for r in MileageRate.objects.filter(make="")}
         self.assertEqual(rates[("car", "Hatchback")], Decimal("12.0"))
         self.assertEqual(rates[("car", "Sedan")], Decimal("10.0"))
         self.assertEqual(rates[("car", "SUV or MUV")], Decimal("8.0"))
@@ -72,7 +73,7 @@ class AdminTests(TestCase):
         url = reverse("admin:fares_faresettings_change", args=[1])
         self.assertEqual(self.client.get(url).status_code, 200)
         response = self.client.post(url, {
-            "fuel_price_per_litre": "108.50", "car_wear_per_km": "2.00", "bike_wear_per_km": "0.80", "recovery_percent": "90",
+            "fuel_price_per_litre": "108.50", "diesel_price_per_litre": "92.00", "cng_price_per_kg": "90.00", "traffic_cut_percent": "20", "car_wear_per_km": "2.00", "bike_wear_per_km": "0.80", "recovery_percent": "90",
         })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(FareSettings.get_solo().fuel_price_per_litre, Decimal("108.50"))

@@ -69,6 +69,12 @@ def get_rate(vehicle_type="car", name=None):
     return MileageRate.objects.get(vehicle_type=vehicle_type, name=name)
 
 
+def get_model(vehicle_type="car", name=None):
+    """A real make and model from the vehicle catalog. Defaults to the Maruti Suzuki Swift or the Honda Activa 6G."""
+    name = name or ("Swift" if vehicle_type == "car" else "Activa 6G")
+    return MileageRate.objects.get(vehicle_type=vehicle_type, name=name)
+
+
 def next_weekday(weekday=0):
     """The next date (today or later) that falls on the given weekday, Monday = 0."""
     today = timezone.localdate()

@@ -8,6 +8,8 @@ class BootstrapFormMixin:
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             widget = field.widget
+            if isinstance(widget, forms.MultiWidget):
+                continue  # composite widgets such as the time picker style their own parts
             if isinstance(widget, forms.CheckboxInput):
                 css = "form-check-input"
             elif isinstance(widget, (forms.Select, forms.SelectMultiple)):

@@ -16,7 +16,7 @@ from apps.trust import services as trust_services
 
 from . import maps, matching, services
 from .forms import EditRideForm, FareAdjustmentForm, OfferRideForm, ReturnTimeForm, SearchForm, UnavailableDateForm
-from .models import CarUnavailableDate, Ride
+from .models import WEEKDAYS, CarUnavailableDate, Ride
 
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,11 @@ def ride_detail(request, pk):
     is_owner = ride.driver_id == request.user.id
     if not ride.is_active and not is_owner:
         return redirect("rides:find")
-    context = {"ride": ride, "fare": fare_services.full_route_fare(ride), "is_owner": is_owner}
+    running = set(ride.office_days_list)
+    context = {
+        "ride": ride, "fare": fare_services.full_route_fare(ride), "is_owner": is_owner,
+        "weekday_chips": [(label, number in running) for number, label in WEEKDAYS],
+    }
     if not is_owner:
         context["driver_stats"] = trust_services.rating_stats([ride.driver_id])[ride.driver_id]
     if is_owner:

@@ -7,10 +7,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.fares import services as fare_services
+from apps.fares.models import MileageRate
 from apps.rides import maps
 from apps.rides.models import CarUnavailableDate, Ride
 
-from .helpers import get_rate, make_driver, make_ride, make_user, next_weekday, point_along
+from .helpers import get_model, get_rate, make_driver, make_ride, make_user, next_weekday, point_along
 
 KR_PURAM = ("KR Puram", 13.0076, 77.6954)
 BELLANDUR = ("Bellandur", 12.9260, 77.6760)
@@ -21,9 +22,11 @@ def offer_payload(**overrides):
         "origin_name": KR_PURAM[0], "origin_lat": KR_PURAM[1], "origin_lng": KR_PURAM[2],
         "destination_name": BELLANDUR[0], "destination_lat": BELLANDUR[1], "destination_lng": BELLANDUR[2],
         "departure_time": "08:30", "office_days": ["0", "1", "2", "3", "4"],
-        "seats": "3", "car_model": "Hyundai i20", "mileage_rate": get_rate("car").pk,
+        "seats": "3", "mileage_rate": get_model("car", "i20").pk,
     }
     data.update(overrides)
+    # The make follows the chosen model unless a test sets it on purpose.
+    data.setdefault("make", MileageRate.objects.get(pk=data["mileage_rate"]).make)
     return data
 
 
@@ -141,18 +144,18 @@ class TwoWheelerTests(TestCase):
         self.assertContains(response, "A two-wheeler carries one rider")
 
     def test_two_wheeler_ride_has_one_seat_whatever_is_posted(self):
-        self.client.post(self.url, offer_payload(seats="3", has_spare_helmet="on", car_model="Honda Activa", mileage_rate=get_rate("bike").pk))
+        self.client.post(self.url, offer_payload(seats="3", has_spare_helmet="on", mileage_rate=get_model("bike").pk))
         ride = Ride.objects.get()
         self.assertEqual((ride.vehicle_type, ride.seats, ride.has_spare_helmet), ("bike", 1, True))
         self.assertTrue(ride.is_bike)
 
     def test_spare_helmet_is_required(self):
-        response = self.client.post(self.url, offer_payload(car_model="Honda Activa", mileage_rate=get_rate("bike").pk))
+        response = self.client.post(self.url, offer_payload(mileage_rate=get_model("bike").pk))
         self.assertContains(response, "Riders must wear a helmet")
         self.assertFalse(Ride.objects.exists())
 
     def test_way_back_is_also_a_two_wheeler_ride(self):
-        self.client.post(self.url, offer_payload(has_spare_helmet="on", mileage_rate=get_rate("bike").pk, offer_return="on", return_time="18:00"))
+        self.client.post(self.url, offer_payload(has_spare_helmet="on", mileage_rate=get_model("bike").pk, offer_return="on", return_time="18:00"))
         self.assertEqual(list(Ride.objects.values_list("vehicle_type", "seats")), [("bike", 1), ("bike", 1)])
 
     def test_car_driver_gets_a_car_ride_and_no_helmet_question(self):
@@ -411,22 +414,24 @@ class FareScreenTests(TestCase):
     def test_offer_form_asks_for_vehicle_class_and_toll(self):
         self.client.force_login(self.driver)
         response = self.client.get(self.offer_url)
-        self.assertContains(response, "Vehicle class")
+        self.assertContains(response, "Make")
+        self.assertContains(response, "Model")
         self.assertContains(response, "Toll for the whole trip")
-        self.assertContains(response, "Sedan")
-        self.assertNotContains(response, "Scooter")  # a car driver is not offered two-wheeler classes
+        self.assertContains(response, "Maruti Suzuki")
+        self.assertNotContains(response, "Activa")  # a car driver is not offered two-wheeler models
 
     def test_two_wheeler_driver_is_offered_only_two_wheeler_classes(self):
         self.client.force_login(make_driver("biker@acme.com", vehicle_type="bike"))
         response = self.client.get(self.offer_url)
-        self.assertContains(response, "Scooter")
-        self.assertNotContains(response, "Sedan")
+        self.assertContains(response, "Activa 6G")
+        self.assertNotContains(response, "Swift")
 
     def test_ride_saves_the_class_and_toll_and_the_message_shows_the_fare(self):
         self.client.force_login(self.driver)
         response = self.client.post(self.offer_url, offer_payload(toll_total="60"), follow=True)
         ride = Ride.objects.get()
-        self.assertEqual((ride.mileage_rate, ride.toll_total), (get_rate("car", "Sedan"), 60))
+        self.assertEqual((ride.mileage_rate, ride.toll_total), (get_model("car", "i20"), 60))
+        self.assertEqual(ride.car_model, "Hyundai i20")  # written from the make and model, not typed
         self.assertContains(response, "Each rider pays about ₹")
 
     def test_toll_is_optional(self):
@@ -447,7 +452,7 @@ class FareScreenTests(TestCase):
         data = offer_payload()
         del data["mileage_rate"]
         self.assertContains(self.client.post(self.offer_url, data), "This field is required")
-        response = self.client.post(self.offer_url, offer_payload(mileage_rate=get_rate("bike").pk))
+        response = self.client.post(self.offer_url, offer_payload(mileage_rate=get_model("bike").pk))
         self.assertContains(response, "Select a valid choice")
         self.assertFalse(Ride.objects.exists())
 
@@ -455,7 +460,7 @@ class FareScreenTests(TestCase):
         self.client.force_login(self.driver)
         self.client.post(self.offer_url, offer_payload(toll_total="40", offer_return="on", return_time="18:00"))
         self.assertEqual(
-            list(Ride.objects.values_list("mileage_rate__name", "toll_total")), [("Sedan", 40), ("Sedan", 40)]
+            list(Ride.objects.values_list("mileage_rate__name", "toll_total")), [("i20", 40), ("i20", 40)]
         )
 
     def test_my_rides_shows_what_each_rider_pays(self):
