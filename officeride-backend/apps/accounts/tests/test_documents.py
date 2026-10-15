@@ -38,7 +38,7 @@ class DocumentTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             "driver@company.com", "S3cure-pass!", first_name="Ravi", last_name="K",
-            techpark="whitefield", email_verified=True,
+            email_verified=True,
         )
         self.client.force_login(self.user)
         self.url = reverse("accounts:documents")
@@ -69,7 +69,7 @@ class SubmitDocumentsTests(DocumentTestCase):
         self.assertRedirects(response, self.url)
         doc = DriverDocument.objects.get(user=self.user)
         self.assertEqual(doc.status, DriverDocument.Status.PENDING)
-        self.assertEqual(doc.licence_number, "KA01 20110012345")  # upper-cased
+        self.assertEqual(doc.licence_number, "KA0120110012345")  # upper-cased, spaces removed
         for field in (doc.licence_file, doc.rc_file, doc.insurance_file):
             self.assertTrue(field.name.startswith(f"driver_docs/user_{self.user.pk}/"))
             self.assertTrue(field.name.endswith(".pdf"))
@@ -196,8 +196,22 @@ class StaffFileAccessTests(DocumentTestCase):
         finally:
             request_finished.connect(close_old_connections)
 
-    def test_normal_user_cannot_open_a_document(self):
-        self.assertEqual(self.client.get(self.file_url()).status_code, 404)
+    def test_owner_can_open_their_own_document_any_time(self):
+        response = self.client.get(self.file_url("rc"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Cache-Control"], "private, no-store")
+        request_finished.disconnect(close_old_connections)
+        try:
+            response.close()
+        finally:
+            request_finished.connect(close_old_connections)
+
+    def test_another_user_cannot_open_a_document(self):
+        other = User.objects.create_user("rider@company.com", "S3cure-pass!", email_verified=True)
+        self.client.force_login(other)
+        for kind in ("licence", "rc", "insurance"):
+            with self.subTest(kind):
+                self.assertEqual(self.client.get(self.file_url(kind)).status_code, 404)
 
     def test_anonymous_user_is_sent_to_login(self):
         self.client.logout()
@@ -243,3 +257,57 @@ class AdminReviewTests(DocumentTestCase):
 
     def test_staff_cannot_add_documents_for_users(self):
         self.assertEqual(self.client.get(reverse("admin:accounts_driverdocument_add")).status_code, 403)
+
+
+class IndianNumberFormTests(DocumentTestCase):
+    """The RC and licence numbers must look like real Indian ones, from any state."""
+
+    def test_the_numbers_from_the_old_screenshot_are_refused(self):
+        response = self.submit(licence_number="CWCQAAC", rc_number="KCWCQINCIQ")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Enter valid licence details.")
+        self.assertContains(response, "Enter valid RC details.")
+        self.assertFalse(DriverDocument.objects.exists())
+
+    def test_vehicles_and_licences_from_other_states_are_accepted(self):
+        response = self.submit(licence_number="tn07 20181234567", rc_number="ap 39 ud 0001")
+        self.assertRedirects(response, self.url)
+        doc = DriverDocument.objects.get()
+        self.assertEqual((doc.licence_number, doc.rc_number), ("TN0720181234567", "AP39UD0001"))
+
+    def test_a_wrong_state_code_gets_the_same_simple_message(self):
+        response = self.submit(rc_number="ZZ01AB1234")
+        self.assertContains(response, "Enter valid RC details.")
+        self.assertNotContains(response, "state code")
+
+    def test_the_page_shows_an_example_in_each_box(self):
+        page = self.client.get(self.url)
+        self.assertContains(page, 'placeholder="KA01 20110012345"')
+        self.assertContains(page, 'placeholder="KA01AB1234"')
+
+
+class DriverCanSeeOwnFilesTests(DocumentTestCase):
+    def test_saved_files_have_view_buttons_for_the_driver(self):
+        self.submit()
+        doc = DriverDocument.objects.get()
+        page = self.client.get(self.url)
+        for kind, label in (("licence", "View licence"), ("rc", "View RC"), ("insurance", "View insurance")):
+            with self.subTest(kind):
+                self.assertContains(page, reverse("accounts:document_file", args=[doc.pk, kind]))
+                self.assertContains(page, label)
+
+    def test_a_new_driver_sees_no_view_buttons(self):
+        self.assertNotContains(self.client.get(self.url), "View licence")
+
+    def test_riders_see_only_the_verified_badge_never_the_files(self):
+        from apps.rides.tests.helpers import make_driver, make_ride, make_user
+
+        driver = make_driver("verified@acme.com")
+        ride = make_ride(driver)
+        rider = make_user("rider2@acme.com")
+        self.client.force_login(rider)
+        page = self.client.get(reverse("rides:detail", args=[ride.pk]))
+        self.assertContains(page, "Documents verified")
+        self.assertNotContains(page, "driver_docs")
+        self.assertNotContains(page, "document_file")
+        self.assertNotContains(page, f"/accounts/documents/{driver.driver_document.pk}/")

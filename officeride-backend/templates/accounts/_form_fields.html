@@ -1,0 +1,21 @@
+{# Draws every field of a form with its label, help text and errors. The mobile number gets its country code select in front. #}
+{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form.visible_fields %}
+  {% if field.name != "country_code" %}
+    <div class="mb-3">
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {% if field.name == "phone" %}
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+          <div style="width: 5.5rem;">{{ form.country_code }}</div>
+          {{ field }}
+        </div>
+      {% else %}
+        {{ field }}
+      {% endif %}
+      {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+      {% for error in field.errors %}<div class="text-danger small mt-1"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+      {% if field.name == "phone" %}{% for error in form.country_code.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}{% endif %}
+    </div>
+  {% endif %}
+{% endfor %}

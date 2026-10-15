@@ -76,11 +76,12 @@ DATABASES = {
     }
 }
 
+# A name inside the password is fine ("Vamsi@2026"), so there is no similarity check. A password needs 8
+# characters with a letter, a number and a symbol, and must not be one of the most common passwords.
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 8}},
+    {"NAME": "apps.accounts.validators.PasswordMixValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 LANGUAGE_CODE = "en-us"

@@ -8,7 +8,7 @@
 
   <form method="post">
     {% csrf_token %}
-    {{ form }}
+    {% include "accounts/_form_fields.html" %}
     <button class="btn btn-primary mt-3">Save profile</button>
   </form>
 
@@ -25,8 +25,10 @@
   {% else %}
     <p><span class="badge text-bg-warning">Pending review</span></p>
   {% endif %}
-  <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:documents' %}">
-    {% if doc %}Update documents{% else %}Submit documents{% endif %}
-  </a>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:documents' %}">
+      {% if doc %}View or update documents{% else %}Submit documents{% endif %}
+    </a>
+  </div>
   {% include "trust/_profile_panel.html" %}
 {% endblock %}

@@ -15,7 +15,6 @@ class RegisterTests(TestCase):
             "last_name": "Kumar",
             "email": "anil@company.com",
             "phone": "98765 43210",
-            "techpark": "whitefield",
             "password1": "Str0ng-pass-91",
             "password2": "Str0ng-pass-91",
         }
@@ -27,7 +26,6 @@ class RegisterTests(TestCase):
         self.assertRedirects(response, reverse("accounts:verify"))
         user = User.objects.get(email="anil@company.com")
         self.assertFalse(user.email_verified)
-        self.assertEqual(user.techpark, "whitefield")
         self.assertEqual(self.client.session["_auth_user_id"], str(user.pk))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["anil@company.com"])
@@ -35,7 +33,8 @@ class RegisterTests(TestCase):
     def test_personal_email_is_rejected(self):
         response = self.client.post(self.url, self.payload(email="anil@gmail.com"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "company email")
+        self.assertContains(response, "That looks like a personal email")
+        self.assertNotContains(response, "Personal addresses such as Gmail")
         self.assertFalse(User.objects.exists())
         self.assertEqual(len(mail.outbox), 0)
 
@@ -60,10 +59,8 @@ class RegisterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(User.objects.exists())
 
-    def test_tech_park_is_required(self):
-        response = self.client.post(self.url, self.payload(techpark=""))
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(User.objects.exists())
+    def test_sign_up_does_not_ask_for_a_tech_park(self):
+        self.assertNotContains(self.client.get(self.url), "Tech park")
 
     def test_logged_in_user_is_sent_away_from_register(self):
         user = User.objects.create_user("a@company.com", "S3cure-pass!")
@@ -75,7 +72,7 @@ class RegisterTests(TestCase):
 class LoginLogoutTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            "anil@company.com", "S3cure-pass!", first_name="Anil", last_name="K", techpark="whitefield"
+            "anil@company.com", "S3cure-pass!", first_name="Anil", last_name="K"
         )
 
     def test_login_with_email_is_case_insensitive(self):
@@ -116,7 +113,7 @@ class ProfileTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             "anil@company.com", "S3cure-pass!", first_name="Anil", last_name="K",
-            techpark="whitefield", email_verified=True,
+            email_verified=True,
         )
         self.client.force_login(self.user)
         self.url = reverse("accounts:profile")
@@ -129,18 +126,17 @@ class ProfileTests(TestCase):
     def test_update_profile_and_normalise_phone(self):
         response = self.client.post(self.url, {
             "first_name": "Anil", "last_name": "Kumar", "phone": "+91 98765-43210",
-            "home_area": "KR Puram", "techpark": "bellandur_orr",
+            "home_area": "KR Puram",
         })
         self.assertRedirects(response, self.url)
         self.user.refresh_from_db()
         self.assertEqual(self.user.phone, "9876543210")
         self.assertEqual(self.user.home_area, "KR Puram")
-        self.assertEqual(self.user.techpark, "bellandur_orr")
 
     def test_invalid_phone_is_rejected(self):
         response = self.client.post(self.url, {
             "first_name": "Anil", "last_name": "Kumar", "phone": "12345",
-            "home_area": "", "techpark": "whitefield",
+            "home_area": "",
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "valid 10-digit")

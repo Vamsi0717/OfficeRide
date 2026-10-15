@@ -9,9 +9,9 @@ User = get_user_model()
 
 SIGNUP = {
     "first_name": "Anil", "last_name": "Kumar", "email": "anil@company.com", "phone": "98765 43210",
-    "techpark": "whitefield", "password1": "Str0ng-pass-91", "password2": "Str0ng-pass-91",
+    "password1": "Str0ng-pass-91", "password2": "Str0ng-pass-91",
 }
-PROFILE = {"first_name": "Anil", "last_name": "Kumar", "phone": "9876543210", "home_area": "", "techpark": "whitefield"}
+PROFILE = {"first_name": "Anil", "last_name": "Kumar", "phone": "9876543210", "home_area": ""}
 
 
 class NormaliseTests(TestCase):
@@ -57,7 +57,7 @@ class SignupPhoneTests(TestCase):
 class ProfilePhoneTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            "old@company.com", "S3cure-pass!", first_name="Old", last_name="User", techpark="whitefield", email_verified=True)
+            "old@company.com", "S3cure-pass!", first_name="Old", last_name="User", email_verified=True)
         self.client.force_login(self.user)
         self.url = reverse("accounts:profile")
 
@@ -90,7 +90,7 @@ class MissingNumberBannerTests(TestCase):
 
     def user(self, phone="", verified=True):
         user = User.objects.create_user(f"u{User.objects.count()}@company.com", "S3cure-pass!", phone=phone,
-                                        first_name="A", last_name="B", techpark="whitefield", email_verified=verified)
+                                        first_name="A", last_name="B", email_verified=verified)
         self.client.force_login(user)
         return user
 

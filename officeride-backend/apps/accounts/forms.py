@@ -7,10 +7,11 @@ from django.utils import timezone
 
 from apps.core.forms import BootstrapFormMixin
 
+from . import indian_ids
 from .models import DriverDocument, User
 
 DOCUMENT_ACCEPT = ".pdf,.jpg,.jpeg,.png"
-ID_NUMBER_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9 /-]{3,29}$")
+COUNTRY_CODES = [("+91", "+91")]  # OfficeRide works inside Bangalore, so only India for now
 
 
 def normalise_phone(raw):
@@ -31,25 +32,36 @@ def phone_field():
     # Wider than the stored 10 digits so "+91 98765 43210" can be typed; normalise_phone() tidies it.
     return forms.CharField(
         max_length=20, required=True, label="Mobile number",
-        help_text="10-digit mobile number. Only the person you share a ride with can call you, and only on the ride day.",
-        widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "tel", "placeholder": "98765 43210"}),
+        widget=forms.TextInput(attrs={"inputmode": "tel", "autocomplete": "tel-national", "placeholder": "98765 43210"}),
         error_messages={"required": "Enter your 10-digit mobile number."},
     )
 
 
+def country_code_field():
+    """Shown as a small select in front of the number. Only +91 exists today and the number alone is what is stored."""
+    return forms.ChoiceField(choices=COUNTRY_CODES, required=False, initial="+91", label="Country code")
+
+
 class RegisterForm(BootstrapFormMixin, UserCreationForm):
+    country_code = country_code_field()
     phone = phone_field()
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ("first_name", "last_name", "email", "phone", "techpark")
+        fields = ("first_name", "last_name", "email", "phone")
+
+    field_order = ("first_name", "last_name", "email", "country_code", "phone", "password1", "password2")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ("first_name", "last_name", "techpark"):
+        for name in ("first_name", "last_name"):
             self.fields[name].required = True
         self.fields["email"].label = "Company email"
-        self.fields["email"].help_text = "Personal addresses such as Gmail are not accepted."
+        self.fields["email"].widget.attrs["placeholder"] = "name@yourcompany.com"
+        # One plain line instead of Django's list of four rules. PasswordMixValidator and the length rule enforce it.
+        self.fields["password1"].help_text = "At least 8 characters with a letter, a number and a symbol."
+        self.fields["password2"].label = "Confirm password"
+        self.fields["password2"].help_text = "Type it once more so we know it is right."
 
     def clean_phone(self):
         return normalise_phone(self.cleaned_data.get("phone"))
@@ -58,7 +70,9 @@ class RegisterForm(BootstrapFormMixin, UserCreationForm):
         email = self.cleaned_data["email"].strip().lower()
         domain = email.rsplit("@", 1)[-1]
         if domain in settings.BLOCKED_EMAIL_DOMAINS:
-            raise forms.ValidationError("Please use your company email, not a personal one.")
+            raise forms.ValidationError(
+                "That looks like a personal email. Sign up with your office email, like name@yourcompany.com."
+            )
         allowed = settings.ALLOWED_EMAIL_DOMAINS
         if allowed and domain not in allowed:
             raise forms.ValidationError("This company is not part of the pilot yet.")
@@ -86,15 +100,18 @@ class OTPForm(BootstrapFormMixin, forms.Form):
 
 
 class ProfileForm(BootstrapFormMixin, forms.ModelForm):
+    country_code = country_code_field()
     phone = phone_field()
 
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "phone", "home_area", "techpark")
+        fields = ("first_name", "last_name", "phone", "home_area")
+
+    field_order = ("first_name", "last_name", "country_code", "phone", "home_area")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ("first_name", "last_name", "techpark"):
+        for name in ("first_name", "last_name"):
             self.fields[name].required = True
 
     def clean_phone(self):
@@ -120,6 +137,8 @@ class DriverDocumentForm(BootstrapFormMixin, forms.ModelForm):
             "insurance_file": "Insurance certificate (PDF, JPG or PNG)",
         }
         widgets = {
+            "licence_number": forms.TextInput(attrs={"placeholder": "KA01 20110012345", "autocapitalize": "characters"}),
+            "rc_number": forms.TextInput(attrs={"placeholder": "KA01AB1234", "autocapitalize": "characters"}),
             "licence_file": forms.FileInput(attrs={"accept": DOCUMENT_ACCEPT}),
             "rc_file": forms.FileInput(attrs={"accept": DOCUMENT_ACCEPT}),
             "insurance_file": forms.FileInput(attrs={"accept": DOCUMENT_ACCEPT}),
@@ -133,17 +152,17 @@ class DriverDocumentForm(BootstrapFormMixin, forms.ModelForm):
             {name: getattr(self.instance, name).name for name in self.FILE_FIELDS} if self.instance.pk else {}
         )
 
-    def _clean_number(self, name, label):
-        value = self.cleaned_data[name].strip().upper()
-        if not ID_NUMBER_PATTERN.match(value):
-            raise forms.ValidationError(f"Enter a valid {label} number (letters, digits, spaces, - or /).")
-        return value
-
     def clean_licence_number(self):
-        return self._clean_number("licence_number", "licence")
+        try:
+            return indian_ids.normalise_licence(self.cleaned_data["licence_number"], today=timezone.localdate())
+        except ValueError:
+            raise forms.ValidationError("Enter valid licence details.")
 
     def clean_rc_number(self):
-        return self._clean_number("rc_number", "RC")
+        try:
+            return indian_ids.normalise_rc(self.cleaned_data["rc_number"])
+        except ValueError:
+            raise forms.ValidationError("Enter valid RC details.")
 
     def clean_insurance_expiry(self):
         expiry = self.cleaned_data["insurance_expiry"]
