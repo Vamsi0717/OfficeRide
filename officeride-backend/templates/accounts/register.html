@@ -1,10 +1,19 @@
 {% extends "base.html" %}
+{% block topbar %}{% endblock %}
+{% block main_class %}container pt-4 pb-5{% endblock %}
 {% block content %}
-  <h3>Create your account</h3>
+  <div class="or-progress mb-4">
+    <a class="or-back" href="{% url 'accounts:login' %}" aria-label="Back to log in"><i class="bi bi-chevron-left"></i></a>
+    <div class="or-bar"><i></i></div>
+    <small>Step 1 of 2</small>
+  </div>
+  <h1 class="h2">Create your account</h1>
+  <p class="text-secondary">Use your work email so people know you are a colleague.</p>
   <form method="post" novalidate>
     {% csrf_token %}
     {% include "accounts/_form_fields.html" %}
-    <button class="btn btn-primary mt-3">Sign up</button>
+    <button class="btn btn-primary btn-lg w-100 mt-2">Create account</button>
   </form>
-  <p class="mt-3">Already registered? <a href="{% url 'accounts:login' %}">Log in</a></p>
+  <p class="text-center mt-3">Already have an account? <a class="fw-bold text-decoration-none" href="{% url 'accounts:login' %}">Log in</a></p>
 {% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/password_meter.js' %}"></script>{% endblock %}

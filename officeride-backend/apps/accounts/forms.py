@@ -60,6 +60,7 @@ class RegisterForm(BootstrapFormMixin, UserCreationForm):
         self.fields["email"].widget.attrs["placeholder"] = "name@yourcompany.com"
         # One plain line instead of Django's list of four rules. PasswordMixValidator and the length rule enforce it.
         self.fields["password1"].help_text = "At least 8 characters with a letter, a number and a symbol."
+        self.fields["password1"].widget.attrs["data-password-meter"] = "true"  # static/js/password_meter.js draws the strength bars
         self.fields["password2"].label = "Confirm password"
         self.fields["password2"].help_text = "Type it once more so we know it is right."
 
