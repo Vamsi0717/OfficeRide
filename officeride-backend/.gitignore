@@ -7,4 +7,5 @@ db.sqlite3
 .vscode/
 .idea/
 staticfiles/
+officeride.dump
 media/
