@@ -1,85 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-  <h3>Offer a ride</h3>
-  <p class="text-muted">Share the commute you already make. Riders pay a share of the running cost, not a taxi fare.</p>
+  <h1 class="or-title">Offer a ride</h1>
+  <p class="or-sub">Going to the office anyway? Let others share the fuel. Riders pay a share of the running cost, not a taxi fare.</p>
   <form method="post" novalidate>
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
 
-    {% include "rides/_place_picker.html" with label="Start (where you leave from)" name_field=form.origin_name lat_field=form.origin_lat lng_field=form.origin_lng %}
-    {% include "rides/_place_picker.html" with label="End (your office or tech park)" name_field=form.destination_name lat_field=form.destination_lat lng_field=form.destination_lng %}
-
-    <div class="alert alert-light border small">
-      Vehicle type: <strong>{{ vehicle_label }}</strong>, taken from your approved documents.
-      {% if form.vehicle_type == "bike" %}A two-wheeler carries one rider.{% endif %}
+    <div class="or-box mb-3">
+      {% include "rides/_place_picker.html" with label="Start (where you leave from)" placeholder="Starting point" dot="start" name_field=form.origin_name lat_field=form.origin_lat lng_field=form.origin_lng %}
+      {% include "rides/_place_picker.html" with label="End (your office or tech park)" placeholder="Office or tech park" dot="end" name_field=form.destination_name lat_field=form.destination_lat lng_field=form.destination_lng %}
     </div>
 
-    <div class="mb-3">
-      <label class="form-label" for="{{ form.departure_time.id_for_label }}">{{ form.departure_time.label }}</label>
-      {{ form.departure_time }}
-      {% for error in form.departure_time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    <div class="or-info">
+      <i class="bi {% if form.vehicle_type == 'bike' %}bi-bicycle{% else %}bi-car-front{% endif %}"></i>
+      <span>Vehicle type: <b>{{ vehicle_label }}</b>, taken from your approved documents.{% if form.vehicle_type == "bike" %} A two-wheeler carries one rider.{% endif %}</span>
     </div>
 
-    <div class="mb-3">
-      <label class="form-label d-block">{{ form.office_days.label }}</label>
-      {% for box in form.office_days %}
-        <div class="form-check form-check-inline">
-          {{ box.tag }}<label class="form-check-label" for="{{ box.id_for_label }}">{{ box.choice_label }}</label>
-        </div>
-      {% endfor %}
-      {% for error in form.office_days.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    <div class="row g-2">
+      <div class="col-6">{% include "rides/_field.html" with field=form.departure_time %}</div>
+      <div class="col-6">{% include "rides/_field.html" with field=form.return_time label="Way back (optional)" %}</div>
     </div>
-
-    <div class="row" data-vehicle-picker>
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.seats.id_for_label }}">{{ form.seats.label }}</label>
-        {{ form.seats }}
-        {% for error in form.seats.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.toll_total.id_for_label }}">{{ form.toll_total.label }}</label>
-        {{ form.toll_total }}
-        <div class="form-text">{{ form.toll_total.help_text }}</div>
-        {% for error in form.toll_total.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.make.id_for_label }}">{{ form.make.label }}</label>
-        {{ form.make }}
-        {% for error in form.make.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.mileage_rate.id_for_label }}">{{ form.mileage_rate.label }}</label>
-        {{ form.mileage_rate }}
-        {% for error in form.mileage_rate.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label" for="{{ form.fare_adjustment.id_for_label }}">{{ form.fare_adjustment.label }}</label>
-      {{ form.fare_adjustment }}
-      <div class="form-text">{{ form.fare_adjustment.help_text }}</div>
-      {% for error in form.fare_adjustment.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-    </div>
-
-    {% if form.has_spare_helmet %}
-      <div class="form-check mb-3">
-        {{ form.has_spare_helmet }}
-        <label class="form-check-label" for="{{ form.has_spare_helmet.id_for_label }}">{{ form.has_spare_helmet.label }}</label>
-        {% for error in form.has_spare_helmet.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-      </div>
-    {% endif %}
-
-    <div class="form-check mb-2">
+    <div class="form-check mb-3">
       {{ form.offer_return }}
       <label class="form-check-label" for="{{ form.offer_return.id_for_label }}">{{ form.offer_return.label }}</label>
     </div>
-    <div class="mb-3">
-      <label class="form-label" for="{{ form.return_time.id_for_label }}">{{ form.return_time.label }}</label>
-      {{ form.return_time }}
-      {% for error in form.return_time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+
+    {% include "rides/_day_chips.html" with field=form.office_days %}
+
+    <div class="or-card" data-vehicle-picker>
+      <div class="or-card-title">Your vehicle and the fare</div>
+      <div class="row g-2">
+        <div class="col-6">{% include "rides/_field.html" with field=form.make %}</div>
+        <div class="col-6">{% include "rides/_field.html" with field=form.mileage_rate %}</div>
+        <div class="col-6">{% include "rides/_field.html" with field=form.seats %}</div>
+        <div class="col-6">{% include "rides/_field.html" with field=form.toll_total %}</div>
+      </div>
+      {% include "rides/_field.html" with field=form.fare_adjustment %}
+      {% if form.has_spare_helmet %}
+        <div class="form-check">
+          {{ form.has_spare_helmet }}
+          <label class="form-check-label" for="{{ form.has_spare_helmet.id_for_label }}">{{ form.has_spare_helmet.label }}</label>
+          {% for error in form.has_spare_helmet.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+        </div>
+      {% endif %}
     </div>
 
-    <button class="btn btn-primary">Publish ride</button>
+    <button class="btn btn-primary or-btn-wide">Publish ride</button>
   </form>
 {% endblock %}
 {% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script><script src="{% static 'js/vehicle_picker.js' %}"></script><script src="{% static 'js/time_wheel.js' %}"></script>{% endblock %}

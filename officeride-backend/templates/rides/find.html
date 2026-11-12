@@ -1,41 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
-  <h3>Find a ride</h3>
-  <p class="text-muted">Anywhere in Bangalore. We match rides whose route passes near your pickup and drop.</p>
-  <form method="get" novalidate class="mb-4">
-    {% include "rides/_place_picker.html" with label="Pickup" name_field=form.pickup_name lat_field=form.pickup_lat lng_field=form.pickup_lng %}
-    {% include "rides/_place_picker.html" with label="Drop" name_field=form.drop_name lat_field=form.drop_lat lng_field=form.drop_lng %}
-    <div class="row">
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
-        {{ form.date }}
-        {% for error in form.date.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  <h1 class="or-title">Where to today?</h1>
+  <p class="or-sub">Find a ride anywhere in Bangalore. We match rides whose route passes near your pickup and drop.</p>
+  <form method="get" novalidate>
+    <div class="or-box">
+      <div class="or-places">
+        {% include "rides/_place_picker.html" with label="Pickup" placeholder="Pickup: type 3 letters" dot="start" name_field=form.pickup_name lat_field=form.pickup_lat lng_field=form.pickup_lng %}
+        {% include "rides/_place_picker.html" with label="Drop" placeholder="Drop: type 3 letters" dot="end" name_field=form.drop_name lat_field=form.drop_lat lng_field=form.drop_lng %}
+        <button type="button" class="or-swap" data-swap-places aria-label="Swap pickup and drop"><i class="bi bi-arrow-down-up"></i></button>
       </div>
-      <div class="col-6 mb-3">
-        <label class="form-label" for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
-        {{ form.time }}
-        {% for error in form.time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+      <div class="row g-2 mt-1">
+        <div class="col-6">
+          <label class="or-label" for="{{ form.date.id_for_label }}">{{ form.date.label }}</label>
+          {{ form.date }}
+          {% for error in form.date.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+        </div>
+        <div class="col-6">
+          <label class="or-label" for="{{ form.time.id_for_label }}">{{ form.time.label }}</label>
+          {{ form.time }}
+          {% for error in form.time.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+        </div>
       </div>
+      <div class="mt-2">
+        <label class="or-label" for="{{ form.vehicle.id_for_label }}">{{ form.vehicle.label }}</label>
+        {{ form.vehicle }}
+      </div>
+      <button class="btn btn-primary or-btn-wide mt-3">Find rides</button>
     </div>
-    <div class="mb-3">
-      <label class="form-label" for="{{ form.vehicle.id_for_label }}">{{ form.vehicle.label }}</label>
-      {{ form.vehicle }}
-    </div>
-    <button class="btn btn-primary">Search</button>
   </form>
 
   {% if matches is not None %}
     {% if matches %}
-      <h5>{{ matches|length }} ride{{ matches|length|pluralize }} found</h5>
+      <div class="or-results-head"><b>{{ matches|length }} ride{{ matches|length|pluralize }} found</b><span class="small text-muted">Closest time first</span></div>
       {% for m in matches %}
         {% include "rides/_match_card.html" with m=m search=search %}
       {% endfor %}
     {% else %}
-      <div class="alert alert-secondary">
-        No rides match yet. We look for rides leaving within {{ window }} minutes of your time, going your way, that pass within 1.5 km of both places.
-        Try another time or day.
+      <div class="or-info mt-3">
+        <i class="bi bi-info-circle"></i>
+        <span><b>No rides match yet.</b> We look for rides leaving within {{ window }} minutes of your time, going your way, that pass within 1.5 km of both places. Try another time or day.</span>
       </div>
     {% endif %}
   {% endif %}
 {% endblock %}
-{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script><script src="{% static 'js/time_wheel.js' %}"></script>{% endblock %}
+{% block scripts %}{% load static %}<script src="{% static 'js/place_picker.js' %}"></script><script src="{% static 'js/swap_places.js' %}"></script><script src="{% static 'js/time_wheel.js' %}"></script>{% endblock %}

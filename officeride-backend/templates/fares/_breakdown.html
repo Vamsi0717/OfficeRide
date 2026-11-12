@@ -1,14 +1,14 @@
 {% if fare %}
-  <div class="small mt-2">
-    <div><span class="fw-semibold fs-5">&#8377;{{ fare.total }}</span> <span class="text-muted">{{ label|default:"per rider" }}</span></div>
-    <div class="text-muted">
-      Fuel &#8377;{{ fare.fuel|floatformat:2 }} &middot; Wear and tear &#8377;{{ fare.wear|floatformat:2 }}{% if fare.toll %} &middot; Toll &#8377;{{ fare.toll|floatformat:2 }}{% endif %}
+  <div class="or-fare">
+    {% if not compact %}<div class="or-fare-total"><span>{{ label|default:"per rider" }}</span><b>&#8377;{{ fare.total }}</b></div>{% endif %}
+    <div class="{% if not compact %}or-fare-lines{% endif %}">
+      <div>Fuel &#8377;{{ fare.fuel|floatformat:2 }} &middot; Wear and tear &#8377;{{ fare.wear|floatformat:2 }}{% if fare.toll %} &middot; Toll &#8377;{{ fare.toll|floatformat:2 }}{% endif %}</div>
+      {% if fare.adjustment %}
+        <div>Standard fare &#8377;{{ fare.base_total }}. The driver set it &#8377;{% if fare.adjustment > 0 %}{{ fare.adjustment }} higher{% else %}{{ fare.adjustment_abs }} lower{% endif %}.</div>
+      {% else %}
+        <div>Riders never pay more than the trip cost.</div>
+      {% endif %}
     </div>
-    {% if fare.adjustment %}
-      <div class="text-muted">Standard fare &#8377;{{ fare.base_total }}. The driver set it &#8377;{% if fare.adjustment > 0 %}{{ fare.adjustment }} higher{% else %}{{ fare.adjustment_abs }} lower{% endif %}.</div>
-    {% else %}
-      <div class="text-muted">Riders never pay more than the trip cost.</div>
-    {% endif %}
   </div>
 {% else %}
   <div class="small text-muted mt-2">Fare not available for this ride yet.</div>

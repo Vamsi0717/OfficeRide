@@ -1,7 +1,11 @@
-<div class="mb-3" data-place-picker data-search-url="{% url 'rides:places_search' %}">
-  <label class="form-label">{{ label }}</label>
-  <input type="text" class="form-control place-input" placeholder="Type at least 3 letters of a place, area or tech park" autocomplete="off">
+{# One place row: a coloured dot, a box to type in, and a list of suggestions. dot is "start" or "end". #}
+<div class="or-place{% if name_field.errors %} has-error{% endif %}" data-place-picker data-search-url="{% url 'rides:places_search' %}">
+  <div class="or-place-row">
+    <span class="or-dot{% if dot == 'end' %} end{% endif %}" aria-hidden="true"></span>
+    <label class="visually-hidden" for="{{ name_field.auto_id }}_text">{{ label }}</label>
+    <input type="text" id="{{ name_field.auto_id }}_text" class="form-control place-input" placeholder="{{ placeholder|default:label }}" autocomplete="off">
+  </div>
   {{ name_field }}{{ lat_field }}{{ lng_field }}
-  <div class="list-group place-results mt-1"></div>
-  {% for error in name_field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+  <div class="list-group place-results"></div>
+  {% for error in name_field.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
 </div>

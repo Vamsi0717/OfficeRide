@@ -77,3 +77,91 @@ a { color: var(--or-brand-dark); }
 .or-meter.weak i.on { background: #F59E0B; }
 .or-meter-text { font-size: .8rem; color: var(--or-muted); margin-top: .3rem; }
 .or-meter-text b { color: var(--or-brand-dark); }
+
+/* Page titles */
+.or-title { font-size: 1.9rem; line-height: 1.1; margin: 0; }
+.or-sub { color: var(--or-muted); font-size: .9rem; margin: .25rem 0 1rem; }
+
+/* Where from and where to: one white box with two rows (Find, Offer) */
+.or-box { background: #fff; border-radius: 22px; padding: .85rem; box-shadow: 0 6px 18px rgba(15, 23, 42, .07); }
+.or-place { position: relative; margin-bottom: .5rem; }
+.or-place-row { display: flex; align-items: center; gap: .75rem; background: var(--or-mint); border-radius: 14px; padding: 0 .9rem; min-height: 48px; }
+.or-place-row .place-input { border: 0; background: transparent; box-shadow: none; padding: 0; min-height: 44px; flex: 1; min-width: 0; font-weight: 500; }
+.or-place-row .place-input:focus { background: transparent; box-shadow: none; }
+.or-place.has-error .or-place-row { outline: 2px solid #DC2626; background: #FEF2F2; }
+.or-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--or-brand); flex: none; }
+.or-dot.end { border-radius: 3px; background: var(--or-navy); }
+.or-place .place-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; box-shadow: 0 10px 26px rgba(15, 23, 42, .18); border-radius: 14px; overflow: hidden; }
+.or-error { color: #B91C1C; font-size: .8rem; font-weight: 500; margin-top: .25rem; display: flex; gap: .35rem; }
+.or-swap { position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: var(--or-navy); color: #A7F3D0; display: inline-flex; align-items: center; justify-content: center; padding: 0; z-index: 2; }
+.or-places { position: relative; }
+.or-places .or-place-row .place-input { padding-right: 2.6rem; }
+
+/* A field with its label, used on Find and Offer */
+.or-field { margin-bottom: .85rem; }
+.or-field > label, .or-label { display: block; font-size: .85rem; font-weight: 600; color: #334155; margin-bottom: .25rem; }
+.or-card { background: #fff; border-radius: 20px; padding: 1rem; box-shadow: 0 4px 14px rgba(15, 23, 42, .07); margin-bottom: 1rem; }
+.or-card-title { font-weight: 700; margin-bottom: .6rem; }
+.or-btn-wide { display: block; width: 100%; min-height: 52px; border-radius: 16px; font-size: 1.05rem; }
+
+/* Day chips: the real checkboxes stay, drawn as rounded buttons */
+.or-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.or-day { position: relative; margin: 0; }
+.or-day input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.or-day span { display: block; text-align: center; padding: .65rem 0; border-radius: 10px; border: 1.5px solid var(--or-line); background: #fff; color: var(--or-muted); font-weight: 600; font-size: .8rem; }
+.or-day input:checked + span { background: var(--or-brand); border-color: var(--or-brand); color: var(--or-navy); font-weight: 700; }
+.or-day input:focus-visible + span { outline: 3px solid var(--or-navy); outline-offset: 2px; }
+
+/* A note with an icon (vehicle type, helmet) */
+.or-info { display: flex; gap: .65rem; align-items: flex-start; background: var(--or-soft); color: #065F46; border-radius: 14px; padding: .7rem .9rem; font-size: .88rem; margin-bottom: 1rem; }
+.or-info i { font-size: 1.2rem; line-height: 1.2; }
+.or-info b { color: var(--or-navy); }
+
+/* Search results */
+.or-results-head { display: flex; justify-content: space-between; align-items: baseline; margin: 1.1rem 0 .6rem; }
+.or-results-head b { font-size: 1rem; }
+.or-ride { background: #fff; border-radius: 18px; padding: .8rem .9rem; box-shadow: 0 3px 10px rgba(15, 23, 42, .06); margin-bottom: .75rem; }
+.or-ride-top { display: flex; align-items: center; gap: .65rem; }
+.or-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--or-soft); color: #065F46; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.or-avatar.lg { width: 46px; height: 46px; font-size: 1.1rem; }
+.or-ride-who { flex: 1; min-width: 0; }
+.or-ride-who b { display: block; font-size: .95rem; }
+.or-ride-who span { font-size: .8rem; color: var(--or-muted); }
+.or-price { text-align: right; line-height: 1.1; }
+.or-price b { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.35rem; display: block; }
+.or-price small { color: var(--or-muted); font-size: .72rem; }
+.or-chips { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .55rem; }
+.or-chip { font-size: .75rem; font-weight: 700; border-radius: 99px; padding: .2rem .6rem; background: var(--or-soft); color: #065F46; display: inline-flex; gap: .25rem; align-items: center; }
+.or-chip.plain { background: #E2E8F0; color: #334155; }
+.or-ride-route { font-size: .85rem; margin-top: .55rem; font-weight: 600; }
+.or-ride-meta { font-size: .8rem; color: var(--or-muted); margin-top: .3rem; }
+.or-actions { display: flex; gap: .5rem; align-items: center; margin-top: .7rem; flex-wrap: wrap; }
+.or-actions .btn { min-height: 44px; }
+
+/* Fare breakdown */
+.or-fare { background: var(--or-soft); border-radius: 14px; padding: .65rem .85rem; margin-top: .6rem; font-size: .85rem; color: #334155; }
+.or-fare .or-fare-total { display: flex; justify-content: space-between; align-items: baseline; }
+.or-fare .or-fare-total b { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.45rem; color: var(--or-navy); }
+.or-fare .or-fare-lines { border-top: 1px dashed #6EE7B7; margin-top: .4rem; padding-top: .4rem; }
+
+/* Ride details */
+.or-hero-card { background: var(--or-navy); color: #F0FDF4; border-radius: 24px; padding: 1.1rem 1.1rem 1rem; margin-bottom: .75rem; }
+.or-hero-card .or-eyebrow { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: #A7F3D0; font-weight: 600; }
+.or-hero-card .or-time { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 2.75rem; line-height: 1; }
+.or-hero-card .or-time small { font-size: 1.1rem; color: #34D399; }
+.or-hero-card .or-stop { display: flex; align-items: center; gap: .65rem; margin-top: .5rem; font-size: .95rem; }
+.or-hero-card .or-dot { background: #34D399; }
+.or-hero-card .or-dot.end { background: #F0FDF4; }
+.or-hero-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; margin-top: .9rem; }
+.or-hero-days span { text-align: center; padding: .4rem 0; border-radius: 9px; border: 1px solid #475569; color: #94A3B8; font-weight: 600; font-size: .72rem; }
+.or-hero-days span.on { background: #34D399; border-color: #34D399; color: var(--or-navy); font-weight: 700; }
+.or-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: .75rem; }
+@media (min-width: 420px) { .or-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.or-tile { background: #fff; border-radius: 14px; padding: .6rem .4rem; text-align: center; }
+.or-tile small { display: block; font-size: .7rem; color: var(--or-muted); }
+.or-tile b { font-size: .92rem; }
+.or-driver { background: #fff; border-radius: 18px; padding: .8rem .9rem; display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; flex-wrap: wrap; }
+.or-driver .or-ride-who { min-width: 8rem; }
+.or-list { background: #fff; border-radius: 16px; padding: .25rem .9rem; margin-bottom: .6rem; }
+.or-list > div { display: flex; justify-content: space-between; gap: .5rem; padding: .6rem 0; border-bottom: 1px solid #ECFDF5; font-size: .88rem; }
+.or-list > div:last-child { border-bottom: 0; }

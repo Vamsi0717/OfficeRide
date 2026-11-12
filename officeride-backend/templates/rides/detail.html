@@ -1,105 +1,83 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  .rd-hero { background: linear-gradient(135deg, #3b2bb5 0%, #0f8b8d 100%); color: #fff; border-radius: 1.25rem; }
-  .rd-time { font-size: 2.4rem; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
-  .rd-route { position: relative; padding-left: 1.6rem; }
-  .rd-route::before { content: ""; position: absolute; left: 0.45rem; top: 0.7rem; bottom: 0.7rem; width: 2px; background: rgba(255,255,255,.55); }
-  .rd-stop { position: relative; margin: .35rem 0; font-weight: 600; font-size: 1.05rem; }
-  .rd-stop::before { content: ""; position: absolute; left: -1.6rem; top: .3rem; width: .9rem; height: .9rem; border-radius: 50%; background: #fff; }
-  .rd-stop.rd-end::before { background: #ffd166; }
-  .rd-chip { background: rgba(255,255,255,.18); border-radius: 2rem; padding: .25rem .75rem; font-size: .85rem; display: inline-block; }
-  .rd-day { width: 2.6rem; text-align: center; border-radius: .6rem; padding: .3rem 0; font-size: .8rem; background: rgba(255,255,255,.14); color: rgba(255,255,255,.7); }
-  .rd-day.on { background: #fff; color: #3b2bb5; font-weight: 700; }
-  .rd-tile { border: 0; border-radius: 1rem; background: #f4f6fb; }
-  .rd-icon { width: 2.4rem; height: 2.4rem; border-radius: .7rem; background: #e3e8ff; color: #3b2bb5; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-  .rd-avatar { width: 3.2rem; height: 3.2rem; border-radius: 50%; background: #0f8b8d; color: #fff; font-weight: 700; font-size: 1.3rem; display: inline-flex; align-items: center; justify-content: center; }
-  .rd-fare { border-radius: 1rem; border: 2px solid #d8f0e4; background: #f2fbf6; }
-</style>
+<div class="d-flex align-items-center gap-2 mb-3">
+  <a class="btn btn-light" style="width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;" href="{% if is_owner %}{% url 'rides:mine' %}{% else %}{% url 'rides:find' %}{% endif %}" aria-label="Back"><i class="bi bi-chevron-left"></i></a>
+  <h1 class="or-title" style="font-size:1.4rem;">Ride details</h1>
+</div>
 
 {% if not ride.is_active %}<div class="alert alert-secondary"><i class="bi bi-pause-circle"></i> This ride is switched off.</div>{% endif %}
 
-<div class="rd-hero p-4 mb-3 shadow-sm">
-  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-    <div>
-      <div class="small text-uppercase opacity-75">Leaves at</div>
-      <div class="rd-time">{{ ride.departure_time|time:"g:i A" }}</div>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <span class="rd-chip"><i class="bi bi-signpost-2"></i> {{ ride.distance_km }} km</span>
-      <span class="rd-chip"><i class="bi bi-clock"></i> about {{ ride.duration_min }} min</span>
-    </div>
-  </div>
-  <div class="rd-route mt-3">
-    <div class="rd-stop">{{ ride.origin_name }}</div>
-    <div class="rd-stop rd-end">{{ ride.destination_name }}</div>
-  </div>
-  <div class="d-flex gap-1 flex-wrap mt-3" aria-label="Runs on {{ ride.office_days_display }}">
-    {% for label, on in weekday_chips %}<span class="rd-day{% if on %} on{% endif %}">{{ label }}</span>{% endfor %}
+<div class="or-hero-card">
+  <div class="or-eyebrow">Leaves at</div>
+  <div class="or-time" aria-hidden="true">{{ ride.departure_time|time:"g:i" }} <small>{{ ride.departure_time|time:"A" }}</small></div>
+  <div class="visually-hidden">Leaves at {{ ride.departure_time|time:"g:i A" }}</div>
+  <div class="or-stop"><span class="or-dot" aria-hidden="true"></span>{{ ride.origin_name }}</div>
+  <div class="or-stop"><span class="or-dot end" aria-hidden="true"></span>{{ ride.destination_name }}</div>
+  <div class="or-hero-days" aria-label="Runs on {{ ride.office_days_display }}">
+    {% for label, on in weekday_chips %}<span class="{% if on %}on{% endif %}">{{ label }}</span>{% endfor %}
   </div>
   <div class="visually-hidden">Runs on {{ ride.office_days_display }}</div>
 </div>
 
-<div class="row g-2 mb-3">
-  <div class="col-6 col-md-4">
-    <div class="card rd-tile h-100"><div class="card-body d-flex gap-2 align-items-center">
-      <span class="rd-icon"><i class="bi bi-people"></i></span>
-      <div><div class="small text-muted">Seats offered</div><div class="fw-semibold">{{ ride.seats }}</div></div>
-    </div></div>
-  </div>
-  <div class="col-6 col-md-4">
-    <div class="card rd-tile h-100"><div class="card-body d-flex gap-2 align-items-center">
-      <span class="rd-icon"><i class="bi {% if ride.is_bike %}bi-bicycle{% else %}bi-car-front{% endif %}"></i></span>
-      <div><div class="small text-muted">{{ ride.get_vehicle_type_display }}</div><div class="fw-semibold">{{ ride.car_model }}</div></div>
-    </div></div>
-  </div>
+<div class="or-tiles">
+  <div class="or-tile"><small>Seats offered</small><b>{{ ride.seats }}</b></div>
+  <div class="or-tile"><small>Distance</small><b>{{ ride.distance_km }} km</b></div>
+  <div class="or-tile"><small>Trip time</small><b>about {{ ride.duration_min }} min</b></div>
+  {% if ride.mileage_rate %}<div class="or-tile"><small>Fuel</small><b>{{ ride.mileage_rate.get_fuel_type_display }}</b></div>{% endif %}
 </div>
 
 {% if ride.is_bike %}
-  <div class="alert alert-info py-2"><i class="bi bi-shield-check"></i> Rider wears a helmet. The driver carries a spare one.</div>
+  <div class="or-info"><i class="bi bi-shield-check"></i><span><b>Helmet rule.</b> Rider wears a helmet. The driver carries a spare one.</span></div>
 {% endif %}
 
 {% if not is_owner %}
-  <div class="card rd-tile mb-3"><div class="card-body d-flex gap-3 align-items-center">
-    <span class="rd-avatar">{{ ride.driver.first_name|slice:":1"|upper }}</span>
-    <div>
-      <div class="fw-semibold">{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}. <span class="badge text-bg-success"><i class="bi bi-patch-check"></i> Documents verified</span></div>
-      <div class="small">{% include "trust/_stats.html" with stats=driver_stats %}</div>
+  <div class="or-driver">
+    <span class="or-avatar lg" aria-hidden="true">{{ ride.driver.first_name|slice:":1"|upper }}{{ ride.driver.last_name|slice:":1"|upper }}</span>
+    <div class="or-ride-who">
+      <b>{{ ride.driver.first_name }} {{ ride.driver.last_name|slice:":1" }}.</b>
+      <span><i class="bi {% if ride.is_bike %}bi-bicycle{% else %}bi-car-front{% endif %}"></i> {{ ride.car_model }}</span><br>
+      <span>{% include "trust/_stats.html" with stats=driver_stats %}</span>
     </div>
-  </div></div>
+    <span class="or-chip"><i class="bi bi-patch-check"></i> Documents verified</span>
+  </div>
+{% else %}
+  <div class="or-driver">
+    <span class="or-avatar lg" aria-hidden="true"><i class="bi {% if ride.is_bike %}bi-bicycle{% else %}bi-car-front{% endif %}"></i></span>
+    <div class="or-ride-who"><b>Your {{ ride.get_vehicle_type_display|lower }}</b><span>{{ ride.car_model }}</span></div>
+    {% if ride.is_active %}<span class="or-chip">Live</span>{% else %}<span class="or-chip plain">Off</span>{% endif %}
+  </div>
 {% endif %}
 
-<div class="rd-fare p-3 mb-3">
-  <div class="fw-semibold"><i class="bi bi-wallet2"></i> Fare for the full route</div>
+<div class="or-card">
+  <div class="or-card-title"><i class="bi bi-wallet2"></i> Fare for the full route</div>
   {% include "fares/_breakdown.html" with fare=fare label="per rider for the full route" %}
 </div>
 
 {% if is_owner %}
-  <div class="small text-muted mb-3">
-    <i class="bi bi-cash-coin"></i> Toll &#8377;{{ ride.toll_total }} for the whole trip &middot;
-    Status: {% if ride.is_active %}<span class="badge text-bg-success">Live</span>{% else %}<span class="badge text-bg-secondary">Off</span>{% endif %}
+  <div class="small text-muted mb-3"><i class="bi bi-cash-coin"></i> Toll &#8377;{{ ride.toll_total }} for the whole trip</div>
+
+  <div class="or-card">
+    <form method="post" action="{% url 'rides:fare' ride.pk %}">
+      {% csrf_token %}
+      <label class="or-label" for="id_fare_adjustment">Change the fare by &#8377; (-{{ max_adjustment }} to {{ max_adjustment }})</label>
+      <div class="d-flex gap-2">
+        <input class="form-control" type="number" name="fare_adjustment" id="id_fare_adjustment" min="-{{ max_adjustment }}" max="{{ max_adjustment }}" value="{{ ride.fare_adjustment }}">
+        <button class="btn btn-outline-primary text-nowrap">Save fare</button>
+      </div>
+      <div class="form-text">Riders who already booked keep the fare they were shown.</div>
+    </form>
   </div>
 
-  <form method="post" action="{% url 'rides:fare' ride.pk %}" class="d-flex gap-2 align-items-end mt-3">
-    {% csrf_token %}
-    <div>
-      <label class="form-label small mb-1" for="id_fare_adjustment">Change the fare by &#8377; (-{{ max_adjustment }} to {{ max_adjustment }})</label>
-      <input class="form-control form-control-sm" type="number" name="fare_adjustment" id="id_fare_adjustment" min="-{{ max_adjustment }}" max="{{ max_adjustment }}" value="{{ ride.fare_adjustment }}" style="width: 8rem;">
-    </div>
-    <button class="btn btn-sm btn-outline-primary">Save fare</button>
-  </form>
-  <div class="form-text">Riders who already booked keep the fare they were shown.</div>
-
-  <h6 class="mt-4">Bookings for this ride</h6>
+  <h2 class="h6 mt-4">Bookings for this ride</h2>
   {% if bookings %}
-    <ul class="list-group mb-2">
+    <div class="or-list">
       {% for b in bookings %}
-        <li class="list-group-item d-flex justify-content-between">
+        <div>
           <span>{{ b.date|date:"D j M" }} &middot; {{ b.rider.first_name }} {{ b.rider.last_name|slice:":1" }}. &middot; &#8377;{{ b.fare }}</span>
-          <span class="badge text-bg-{% if b.status == 'accepted' %}success{% else %}warning{% endif %}">{{ b.get_status_display }}</span>
-        </li>
+          <span class="or-chip{% if b.status != 'accepted' %} plain{% endif %}">{{ b.get_status_display }}</span>
+        </div>
       {% endfor %}
-    </ul>
+    </div>
     <a href="{% url 'bookings:trips' %}">Accept, reject or cancel on My trips</a>
   {% else %}
     <p class="text-muted small">No upcoming bookings.</p>
@@ -115,10 +93,7 @@
   </div>
   <a class="d-block mt-3" href="{% url 'rides:mine' %}">Back to my rides</a>
 {% else %}
-  <div class="d-flex gap-2 align-items-start text-muted small">
-    <i class="bi bi-info-circle"></i>
-    <span>To request a seat, search for the ride from your pickup to your drop. The fare depends on how far you travel on the route.</span>
-  </div>
-  <a class="btn btn-primary mt-3" href="{% url 'rides:find' %}"><i class="bi bi-search"></i> Back to search</a>
+  <div class="or-info"><i class="bi bi-info-circle"></i><span>To request a seat, search for the ride from your pickup to your drop. The fare depends on how far you travel on the route.</span></div>
+  <a class="btn btn-primary or-btn-wide" href="{% url 'rides:find' %}"><i class="bi bi-search"></i> Back to search</a>
 {% endif %}
 {% endblock %}

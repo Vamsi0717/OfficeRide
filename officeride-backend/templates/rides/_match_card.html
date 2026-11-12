@@ -1,31 +1,37 @@
-<div class="card mb-3">
-  <div class="card-body">
-    <div class="fw-semibold">{{ m.ride.origin_name }} &rarr; {{ m.ride.destination_name }}</div>
-    <div>Leaves {{ m.ride.departure_time|time:"g:i A" }}
-      <span class="text-muted">({{ m.time_diff_min }} min from your time)</span></div>
-    <div class="small text-muted mt-1">
-      {{ m.ride.get_vehicle_type_display }} &middot; Runs {{ m.ride.office_days_display }} &middot; {{ m.ride.seats }} seat{{ m.ride.seats|pluralize }} &middot; {{ m.ride.car_model }}{% if m.ride.is_bike %} &middot; spare helmet carried{% endif %}
-      &middot; Driver {{ m.ride.driver.first_name }} {{ m.ride.driver.last_name|slice:":1" }}
-      {% include "trust/_stats.html" with stats=m.driver_stats %}
+<div class="or-ride">
+  <div class="or-ride-top">
+    <span class="or-avatar" aria-hidden="true">{{ m.ride.driver.first_name|slice:":1"|upper }}{{ m.ride.driver.last_name|slice:":1"|upper }}</span>
+    <div class="or-ride-who">
+      <b>{{ m.ride.driver.first_name }} {{ m.ride.driver.last_name|slice:":1" }}.</b>
+      <span>{{ m.ride.car_model }} &middot; Leaves {{ m.ride.departure_time|time:"g:i A" }}</span>
     </div>
-    <div class="small mt-2">
-      Your trip on this ride: about {{ m.rider_km }} km.
-      Pickup is {{ m.pickup_offset_km }} km and drop is {{ m.drop_offset_km }} km from the route.
-    </div>
-    {% include "fares/_breakdown.html" with fare=m.fare label="for your trip" %}
-    <div class="d-flex gap-2 align-items-center mt-2">
-      <a class="btn btn-sm btn-outline-primary" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
-      <form method="post" action="{% url 'bookings:request_seat' m.ride.pk %}" class="m-0">
-        {% csrf_token %}
-        <input type="hidden" name="date" value="{{ search.date }}">
-        <input type="hidden" name="pickup_name" value="{{ search.pickup_name }}">
-        <input type="hidden" name="pickup_lat" value="{{ search.pickup_lat }}">
-        <input type="hidden" name="pickup_lng" value="{{ search.pickup_lng }}">
-        <input type="hidden" name="drop_name" value="{{ search.drop_name }}">
-        <input type="hidden" name="drop_lat" value="{{ search.drop_lat }}">
-        <input type="hidden" name="drop_lng" value="{{ search.drop_lng }}">
-        <button class="btn btn-sm btn-primary">Request a seat</button>
-      </form>
-    </div>
+    {% if m.fare %}<div class="or-price"><b>&#8377;{{ m.fare.total }}</b><small>for your trip</small></div>{% endif %}
+  </div>
+  <div class="or-chips">
+    <span class="or-chip"><i class="bi bi-patch-check"></i> Documents verified</span>
+    <span class="or-chip plain"><i class="bi {% if m.ride.is_bike %}bi-bicycle{% else %}bi-car-front{% endif %}"></i> {{ m.ride.get_vehicle_type_display }}</span>
+    <span class="or-chip plain">{{ m.ride.seats }} seat{{ m.ride.seats|pluralize }}</span>
+    {% if m.ride.is_bike %}<span class="or-chip plain"><i class="bi bi-shield-check"></i> Helmet rule: spare helmet carried</span>{% endif %}
+  </div>
+  <div class="or-ride-route">{{ m.ride.origin_name }} &rarr; {{ m.ride.destination_name }}</div>
+  <div class="or-ride-meta">
+    {{ m.time_diff_min }} min from your time &middot; Runs {{ m.ride.office_days_display }}<br>
+    Your trip on this ride: about {{ m.rider_km }} km. Pickup is {{ m.pickup_offset_km }} km and drop is {{ m.drop_offset_km }} km from the route.<br>
+    {% include "trust/_stats.html" with stats=m.driver_stats %}
+  </div>
+  {% include "fares/_breakdown.html" with fare=m.fare label="for your trip" compact=True %}
+  <div class="or-actions">
+    <form method="post" action="{% url 'bookings:request_seat' m.ride.pk %}" class="m-0 flex-grow-1">
+      {% csrf_token %}
+      <input type="hidden" name="date" value="{{ search.date }}">
+      <input type="hidden" name="pickup_name" value="{{ search.pickup_name }}">
+      <input type="hidden" name="pickup_lat" value="{{ search.pickup_lat }}">
+      <input type="hidden" name="pickup_lng" value="{{ search.pickup_lng }}">
+      <input type="hidden" name="drop_name" value="{{ search.drop_name }}">
+      <input type="hidden" name="drop_lat" value="{{ search.drop_lat }}">
+      <input type="hidden" name="drop_lng" value="{{ search.drop_lng }}">
+      <button class="btn btn-primary w-100">Request a seat</button>
+    </form>
+    <a class="btn btn-outline-primary" href="{% url 'rides:detail' m.ride.pk %}">View ride</a>
   </div>
 </div>

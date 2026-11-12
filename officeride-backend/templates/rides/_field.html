@@ -1,0 +1,7 @@
+{# One labelled field with its help text and errors. Pass field=form.something. #}
+<div class="or-field">
+  <label for="{{ field.id_for_label }}">{{ label|default:field.label }}</label>
+  {{ field }}
+  {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+  {% for error in field.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+</div>

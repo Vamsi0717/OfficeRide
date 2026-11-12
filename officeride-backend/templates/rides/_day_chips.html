@@ -1,0 +1,10 @@
+{# The office days as seven round-cornered buttons. They are still ordinary checkboxes, so the form works as before. #}
+<div class="or-field">
+  <span class="or-label" id="days-label">{{ field.label }}</span>
+  <div class="or-days" role="group" aria-labelledby="days-label">
+    {% for box in field %}
+      <label class="or-day" for="{{ box.id_for_label }}">{{ box.tag }}<span>{{ box.choice_label }}</span></label>
+    {% endfor %}
+  </div>
+  {% for error in field.errors %}<div class="or-error"><i class="bi bi-exclamation-circle"></i> {{ error }}</div>{% endfor %}
+</div>
