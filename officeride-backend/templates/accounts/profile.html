@@ -1,34 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center">
-    <h3 class="mb-0">Your profile</h3>
-    <span class="badge text-bg-success">Email verified</span>
+  <div class="or-profile-head">
+    <span class="or-avatar" aria-hidden="true">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+    <div>
+      <h1>Your profile</h1>
+      <div>{{ user.first_name }} {{ user.last_name }}</div>
+      <div>{{ user.email }}{% if user.phone %} &middot; +91 {{ user.phone }}{% endif %}</div>
+    </div>
   </div>
-  <p class="text-muted">{{ user.email }}</p>
+  <div class="or-stats">
+    <div class="or-stat"><b>{{ stats.rides }}</b><small>Rides shared</small></div>
+    <div class="or-stat"><b>{% if stats.count %}&#9733; {{ stats.average }}{% else %}-{% endif %}</b><small>Rating</small></div>
+    <div class="or-stat"><b>{{ strikes.count }}</b><small>Strikes</small></div>
+  </div>
 
-  <form method="post">
-    {% csrf_token %}
-    {% include "accounts/_form_fields.html" %}
-    <button class="btn btn-primary mt-3">Save profile</button>
-  </form>
-
-  <hr class="my-4">
-  <h5>Driver documents</h5>
-  {% if not doc %}
-    <p class="text-muted">Not submitted. You need approved documents to offer rides.</p>
-  {% elif doc.status == "approved" %}
-    <p><span class="badge text-bg-success">Approved</span> {{ doc.get_vehicle_type_display }}.
-      {% if doc.insurance_valid %}Insurance valid until {{ doc.insurance_expiry }}.{% else %}
-      <span class="text-danger">Insurance expired on {{ doc.insurance_expiry }}.</span>{% endif %}</p>
-  {% elif doc.status == "rejected" %}
-    <p><span class="badge text-bg-danger">Rejected</span> {{ doc.rejection_reason|default:"Please resubmit." }}</p>
-  {% else %}
-    <p><span class="badge text-bg-warning">Pending review</span></p>
-  {% endif %}
-  <div class="d-flex flex-wrap gap-2">
-    <a class="btn btn-outline-primary btn-sm" href="{% url 'accounts:documents' %}">
-      {% if doc %}View or update documents{% else %}Submit documents{% endif %}
+  <div class="or-menu">
+    <a class="or-menu-row" href="{% url 'accounts:documents' %}">
+      <span class="or-ico"><i class="bi bi-file-earmark-check"></i></span>
+      <span class="or-grow">My documents<small>{% if doc %}{{ doc.get_vehicle_type_display }}: licence, RC and insurance{% else %}Needed to offer rides{% endif %}</small></span>
+      {% if not doc %}<span class="or-status off">Not submitted</span>
+      {% elif doc.status == "approved" %}<span class="or-status">Approved</span>
+      {% elif doc.status == "rejected" %}<span class="or-status bad">Rejected</span>
+      {% else %}<span class="or-status pending">Pending review</span>{% endif %}
     </a>
+    <a class="or-menu-row" href="{% url 'rides:mine' %}">
+      <span class="or-ico"><i class="bi bi-car-front"></i></span>
+      <span class="or-grow">Rides I offer<small>Switch off, edit or delete your rides</small></span>
+      <i class="bi bi-chevron-right text-muted"></i>
+    </a>
+    <a class="or-menu-row" href="{% url 'bookings:plan' %}">
+      <span class="or-ico"><i class="bi bi-calendar-week"></i></span>
+      <span class="or-grow">My week<small>Driving or riding, day by day</small></span>
+      <i class="bi bi-chevron-right text-muted"></i>
+    </a>
+    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+      {% csrf_token %}
+      <button class="or-menu-row danger"><span class="or-ico"><i class="bi bi-box-arrow-right"></i></span><span class="or-grow">Log out</span></button>
+    </form>
   </div>
+
+  <div class="or-card">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div class="or-card-title mb-0">Edit profile</div>
+      <span class="or-chip"><i class="bi bi-patch-check"></i> Email verified</span>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      {% include "accounts/_form_fields.html" %}
+      <button class="btn btn-primary or-btn-wide mt-3">Save profile</button>
+    </form>
+  </div>
+
+  {% if doc and doc.status == "approved" and not doc.insurance_valid %}
+    <div class="alert alert-danger">Insurance expired on {{ doc.insurance_expiry }}. <a href="{% url 'accounts:documents' %}">Update your documents</a>.</div>
+  {% elif doc and doc.status == "rejected" %}
+    <div class="alert alert-danger">{{ doc.rejection_reason|default:"Please resubmit." }}</div>
+  {% endif %}
   {% include "trust/_profile_panel.html" %}
 {% endblock %}

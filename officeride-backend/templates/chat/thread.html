@@ -1,24 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="d-flex justify-content-between align-items-center">
-    <h3 class="mb-1"><i class="bi bi-chat-dots-fill text-primary"></i> Chat with {{ other.first_name }} {{ other.last_name|slice:":1" }}.</h3>
-    {% if can_call %}<a class="btn btn-success rounded-circle" style="width:2.5rem;height:2.5rem;padding:0;line-height:2.5rem" href="{% url 'chat:call' req.pk %}" title="Call {{ other.first_name }}" aria-label="Call {{ other.first_name }}"><i class="bi bi-telephone-fill"></i></a>{% endif %}
+  <div class="or-chat-head">
+    <a class="btn btn-light or-roundbtn" href="{% url 'bookings:trips' %}" aria-label="Back to My trips"><i class="bi bi-chevron-left"></i></a>
+    <span class="or-avatar" aria-hidden="true">{{ other.first_name|slice:":1"|upper }}{{ other.last_name|slice:":1"|upper }}</span>
+    <div class="or-who">
+      <h1 class="visually-hidden">Chat with {{ other.first_name }} {{ other.last_name|slice:":1" }}.</h1>
+      <b aria-hidden="true">{{ other.first_name }} {{ other.last_name|slice:":1" }}.</b>
+      <span>{{ req.date|date:"D j M Y" }} &middot; {{ req.ride.departure_time|time:"g:i A" }} &middot; {{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }}</span>
+    </div>
+    {% if can_call %}<a class="btn btn-primary" href="{% url 'chat:call' req.pk %}" title="Call {{ other.first_name }}" aria-label="Call {{ other.first_name }}"><i class="bi bi-telephone-fill"></i> Call</a>{% endif %}
   </div>
-  <p class="text-muted small">{{ req.ride.origin_name }} &rarr; {{ req.ride.destination_name }} on {{ req.date|date:"D j M Y" }} at {{ req.ride.departure_time|time:"g:i A" }}
-    &middot; <span class="badge text-bg-secondary">{{ req.get_status_display }}</span></p>
-  <p class="small text-muted">Phone numbers and emails are never shown here. Keep to the ride.</p>
+  <div class="mb-2"><span class="or-status">{{ req.get_status_display }}</span></div>
+  <div class="or-privacy"><i class="bi bi-lock"></i> Phone numbers and emails are never shown here. Keep to the ride.</div>
 
   {% if req.agreed_pickup %}
-    <div class="alert alert-success py-2">Pickup point: <strong>{{ req.agreed_pickup }}</strong></div>
+    <div class="or-info"><i class="bi bi-pin-map-fill"></i><span>Pickup point: <b>{{ req.agreed_pickup }}</b></span></div>
   {% endif %}
 
-  <div class="border rounded p-2 mb-3" style="max-height: 24rem; overflow-y: auto;">
+  <div class="or-thread">
     {% for m in thread %}
-      <div class="d-flex {% if m.sender_id == user.id %}justify-content-end{% endif %} mb-2">
-        <div class="px-2 py-1 rounded {% if m.sender_id == user.id %}bg-primary text-white{% else %}bg-light border{% endif %}" style="max-width: 80%;">
-          <div class="small {% if m.sender_id == user.id %}text-white-50{% else %}text-muted{% endif %}">{% if m.sender_id == user.id %}You{% else %}{{ m.sender.first_name }}{% endif %} &middot; {{ m.created_at|date:"j M, g:i A" }}</div>
-          <div>{{ m.text }}</div>
-        </div>
+      <div class="or-msg {% if m.sender_id == user.id %}me{% else %}them{% endif %}">
+        <small>{% if m.sender_id == user.id %}You{% else %}{{ m.sender.first_name }}{% endif %} &middot; {{ m.created_at|date:"j M, g:i A" }}</small>
+        {{ m.text }}
       </div>
     {% empty %}
       <p class="text-muted small m-2">No messages yet.</p>
@@ -26,25 +29,25 @@
   </div>
 
   {% if can_write %}
-    <div class="d-flex gap-2 flex-wrap mb-3">
+    <div class="or-quick">
       {% for key, text in quick.items %}
         <form method="post" action="{% url 'chat:quick' req.pk key %}" class="m-0">
           {% csrf_token %}
-          <button class="btn btn-sm btn-outline-secondary">{{ text }}</button>
+          <button>{{ text }}</button>
         </form>
       {% endfor %}
     </div>
-    <form method="post" class="d-flex gap-2 mb-4">
+    <form method="post" class="or-compose">
       {% csrf_token %}
       {{ form.text }}
-      <button class="btn btn-primary">Send</button>
+      <button class="btn btn-primary or-send" aria-label="Send"><i class="bi bi-send-fill"></i></button>
     </form>
-    <form method="post" action="{% url 'chat:confirm_pickup' req.pk %}" class="mb-3">
+    <form method="post" action="{% url 'chat:confirm_pickup' req.pk %}" class="or-card">
       {% csrf_token %}
-      <label class="form-label small mb-1" for="id_spot">Confirm the pickup point you agreed on</label>
+      <label class="or-label" for="id_spot">Confirm the pickup point you agreed on</label>
       <div class="d-flex gap-2">
-        <input class="form-control form-control-sm" id="id_spot" name="spot" maxlength="120" value="{{ req.agreed_pickup|default:req.pickup_name }}" required>
-        <button class="btn btn-sm btn-success">Confirm pickup point</button>
+        <input class="form-control" id="id_spot" name="spot" maxlength="120" value="{{ req.agreed_pickup|default:req.pickup_name }}" required>
+        <button class="btn btn-primary text-nowrap">Confirm pickup point</button>
       </div>
     </form>
   {% else %}

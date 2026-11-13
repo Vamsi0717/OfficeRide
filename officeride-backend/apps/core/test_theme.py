@@ -58,12 +58,20 @@ class BottomMenuTests(TestCase):
                 self.assertContains(page, f"or-tab active\" href=\"{reverse(url_name)}\"")
                 self.assertContains(page, f"</span>{label}</a>")
 
-    def test_rides_i_offer_and_documents_stay_one_tap_away_in_the_top_bar(self):
+    def test_the_top_bar_keeps_only_the_logo_and_log_out(self):
         self.client.force_login(self.user)
         page = self.client.get(reverse("rides:find"))
-        self.assertContains(page, f'href="{reverse("rides:mine")}" title="Rides I offer"')
-        self.assertContains(page, f'href="{reverse("accounts:documents")}" title="My documents"')
         self.assertContains(page, "Log out")
+        self.assertNotContains(page, 'title="Rides I offer"')
+        self.assertNotContains(page, 'title="My documents"')
+
+    def test_rides_i_offer_and_documents_are_in_the_profile_menu(self):
+        self.client.force_login(self.user)
+        page = self.client.get(reverse("accounts:profile"))
+        self.assertContains(page, f'href="{reverse("rides:mine")}"')
+        self.assertContains(page, f'href="{reverse("accounts:documents")}"')
+        self.assertContains(page, "Rides I offer")
+        self.assertContains(page, "My documents")
 
 
 class LoginPageTests(TestCase):
