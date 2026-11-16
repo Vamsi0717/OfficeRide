@@ -1,21 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-  <h3>Verify your email</h3>
-  <p>We sent a 6-digit code to <strong>{{ user.email }}</strong>. It is valid for {{ expiry_minutes }} minutes.</p>
+  <h1 class="or-title">Verify your email</h1>
+  <p class="or-sub">We sent a 6-digit code to <strong>{{ user.email }}</strong>. It is valid for {{ expiry_minutes }} minutes.</p>
   {% if dev_hint %}
-    <div class="alert alert-secondary small">
-      Development mode: the email is printed in the terminal where <code>runserver</code> is running.
-    </div>
+    <div class="or-info"><i class="bi bi-terminal"></i><span>Development mode: the email is printed in the terminal where <code>runserver</code> is running.</span></div>
   {% endif %}
-  <form method="post" class="mb-3">
+  <form method="post" class="or-card or-code">
     {% csrf_token %}
     {{ form }}
-    <button class="btn btn-primary mt-3">Verify</button>
+    <button class="btn btn-primary or-btn-wide mt-3">Verify</button>
   </form>
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="resend" value="1">
-    <button id="resend-btn" class="btn btn-outline-secondary btn-sm" data-wait="{{ wait|default:0 }}"{% if wait %} disabled{% endif %}>
+    <button id="resend-btn" class="btn btn-outline-secondary" data-wait="{{ wait|default:0 }}"{% if wait %} disabled{% endif %}>
       Send a new code{% if wait %} (available in <span id="resend-count">{{ wait }}</span>s){% endif %}
     </button>
   </form>
