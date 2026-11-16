@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from apps.accounts.decorators import email_verified_required
 from apps.fares import services as fare_services
 from apps.chat import services as chat_services
+from apps.payments.models import Payment
 from apps.rides import matching
 from apps.trust import services as trust_services
 from apps.trust.models import Rating
@@ -57,12 +58,14 @@ def trips(request):
     driving = list(base.filter(ride__driver=user)[:100])
     everything = riding + driving
     rated = set(Rating.objects.filter(rater=user, request__in=everything).values_list("request_id", flat=True))
+    paid = {p.request_id: p for p in Payment.objects.filter(request__in=riding, status=Payment.Status.PAID)}
     chat = chat_services.summary(user, [r.pk for r in everything])
     for reqs, other_is_driver in ((riding, True), (driving, False)):
         for req in reqs:
             req.other = req.ride.driver if other_is_driver else req.rider
             req.actions = services.allowed_actions(req, user)
             req.rated = req.pk in rated
+            req.payment = paid.get(req.pk)
             req.chat_total = chat.get(req.pk, {}).get("total", 0)
             req.chat_unread = chat.get(req.pk, {}).get("unread", 0)
             req.can_call = chat_services.call_window_open(req)

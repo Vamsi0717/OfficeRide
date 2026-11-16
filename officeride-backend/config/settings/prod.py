@@ -17,3 +17,7 @@ EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
 # Sample places and straight-line routes must never reach real users.
 if MAPS_PROVIDER != "google" or not GOOGLE_MAPS_API_KEY:  # noqa: F405
     raise ImproperlyConfigured("Production needs MAPS_PROVIDER=google and GOOGLE_MAPS_API_KEY.")
+
+# The practice payment mode must never run for real users.
+if PAYMENTS_PROVIDER != "razorpay":  # noqa: F405
+    raise ImproperlyConfigured("Production needs PAYMENTS_PROVIDER=razorpay.")

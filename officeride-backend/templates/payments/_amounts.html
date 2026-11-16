@@ -1,0 +1,9 @@
+<div class="or-card">
+  <div class="d-flex justify-content-between py-1"><span>Fare (fuel, wear and toll, shared)</span><span>&#8377;{{ payment.standard_rupees|floatformat:"-2" }}</span></div>
+  {% if payment.adjustment_paise %}
+    <div class="d-flex justify-content-between py-1"><span>Driver's change to the fare</span><span>{% if payment.adjustment_paise > 0 %}+{% else %}-{% endif %}&#8377;{{ payment.adjustment_rupees|floatformat:"-2"|cut:"-" }}</span></div>
+  {% endif %}
+  <div class="d-flex justify-content-between py-1"><span>OfficeRide fee</span><span>{% if payment.platform_fee_paise %}&#8377;{{ payment.fee_rupees|floatformat:"-2" }}{% else %}&#8377;0{% endif %}</span></div>
+  <hr class="my-2">
+  <div class="d-flex justify-content-between fw-bold"><span>Total</span><span>&#8377;{{ payment.amount_rupees|floatformat:"-2" }}</span></div>
+</div>

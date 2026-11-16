@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.chat",
     "apps.core",
     "apps.fares",
+    "apps.payments",
     "apps.rides",
     "apps.trust",
 ]
@@ -155,3 +156,12 @@ SUSPENSION_DAYS = 7
 CHAT_MAX_CHARS = 500            # one message
 CHAT_MAX_MESSAGES = 200         # per booking, so a thread cannot be flooded
 CALL_WINDOW_DAYS = 1            # the call button works from the ride day until this many days ahead (1 = today and tomorrow)
+
+# Payments (Phase 8). "fake" is a practice mode with no Razorpay account and no money. "razorpay" uses the keys below.
+# Test keys only until the pilot is approved. Never put real keys in Git.
+PAYMENTS_PROVIDER = os.getenv("PAYMENTS_PROVIDER", "razorpay")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
+RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
+# OfficeRide's own fee per ride, in paise. Zero during the pilot.
+PLATFORM_FEE_PAISE = int(os.getenv("PLATFORM_FEE_PAISE", "0"))

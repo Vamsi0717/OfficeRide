@@ -46,6 +46,18 @@
     {% endif %}
   </div>
 
+  {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
+    {% if req.payment %}
+      <div class="or-actions"><span class="or-chip plain"><i class="bi bi-check-circle-fill text-success"></i> Paid</span>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments:receipt' req.payment.pk %}"><i class="bi bi-receipt"></i> Receipt</a></div>
+    {% elif req.status == 'accepted' %}
+      <div class="or-actions">
+        <form method="post" action="{% url 'payments:pay' req.pk %}" class="m-0">{% csrf_token %}
+          <button class="btn btn-sm btn-primary"><i class="bi bi-wallet2"></i> Pay &#8377;{{ req.fare }}</button>
+        </form>
+      </div>
+    {% endif %}
+  {% endif %}
   {% if req.late_cancel %}<div class="small text-danger mt-2"><i class="bi bi-exclamation-triangle"></i> Cancelled late, less than an hour before departure.</div>{% endif %}
   {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
     <div class="or-actions"><a class="btn btn-sm btn-outline-primary" href="{% url 'bookings:request_back' req.pk %}"><i class="bi bi-arrow-repeat"></i> Request the ride back</a></div>
