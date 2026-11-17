@@ -52,28 +52,6 @@ class EarningsTests(Booked, TestCase):
         paid_booking(other, self.rider, date=MONDAY, status=S.COMPLETED)
         self.assertEqual(services.earnings_summary(self.driver, today=MONDAY)["this_week"], [])
 
-    def test_the_earnings_page_shows_this_weeks_rides_and_total(self):
-        paid_booking(self.ride, self.rider, date=timezone.localdate(), status=S.COMPLETED, fare=50)
-        self.client.force_login(self.driver)
-        page = self.client.get(reverse("payments:earnings"))
-        self.assertContains(page, "My earnings")
-        self.assertContains(page, "&#8377;50")
-        self.assertContains(page, "Anita R.")
-        self.assertContains(page, "Rides this week")
-
-    def test_the_earnings_page_for_a_driver_with_no_rides_is_friendly(self):
-        self.client.force_login(self.driver)
-        self.assertContains(self.client.get(reverse("payments:earnings")), "No completed, paid rides this week yet.")
-
-    def test_only_drivers_see_the_link_in_the_profile_menu(self):
-        self.client.force_login(self.driver)
-        self.assertContains(self.client.get(reverse("accounts:profile")), reverse("payments:earnings"))
-        self.client.force_login(self.rider)
-        self.assertNotContains(self.client.get(reverse("accounts:profile")), reverse("payments:earnings"))
-
-    def test_anonymous_goes_to_login(self):
-        self.assertEqual(self.client.get(reverse("payments:earnings")).status_code, 302)
-
 
 @with_test_keys
 class SettlementTests(Booked, TestCase):
@@ -160,15 +138,6 @@ class SettlementTests(Booked, TestCase):
         from django.core.management.base import CommandError
         with self.assertRaises(CommandError):
             call_command("make_settlements", "--week-start", "2026-11-10")
-
-    def test_the_earnings_page_lists_the_settlements(self):
-        paid_booking(self.ride, self.rider, date=MONDAY, status=S.COMPLETED, fare=50)
-        services.build_settlements(MONDAY)
-        self.client.force_login(self.driver)
-        page = self.client.get(reverse("payments:earnings"))
-        self.assertContains(page, "To be paid")
-        services.mark_settlement_paid(Settlement.objects.get(), "UTR1")
-        self.assertContains(self.client.get(reverse("payments:earnings")), "Paid out")
 
 
 @with_test_keys

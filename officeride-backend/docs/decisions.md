@@ -35,3 +35,9 @@ A short record of choices that change how OfficeRide behaves, and why.
 - Every week (Monday to Sunday) the command `python manage.py make_settlements` adds up what each driver is owed. It is safe to run again, and a payment is never counted twice.
 - The admin pays the driver by hand (bank or UPI), types the transfer reference on the settlement and marks it as paid out.
 - Open question for the lawyer: how the platform fee sits with the rule that riders never pay more than the trip's running cost. Keep `PLATFORM_FEE_PAISE` at 0 until this is answered.
+
+## The backend becomes an API (Phase 8c)
+
+- OfficeRide is now a Django **backend** plus a separate **React frontend** (website) that is also wrapped as the **Android app**. Both talk to the same API and the same database.
+- The old server-rendered pages (`templates/`, `static/`, the `views.py` and `urls.py` of each app) were removed in Phase 8c. They are still in Git: `git checkout phase-8b-done -- templates` brings the old files back to read.
+- Kept: the models, every `services.py`, the `forms.py` files (the API reuses their checks), the admin, the Razorpay webhook, and the staff-only view of uploaded driver documents.

@@ -59,29 +59,3 @@ class BlockedUserTests(TripMixin, TestCase):
         suspend(self.driver)
         with self.assertRaisesMessage(booking_services.BookingError, "suspended until"):
             booking_services.accept(req.pk, self.driver)
-
-    def test_a_blocked_driver_cannot_offer_a_ride_and_is_told_why(self):
-        suspend(self.driver)
-        self.client.force_login(self.driver)
-        response = self.client.get(reverse("rides:offer"), follow=True)
-        self.assertRedirects(response, reverse("accounts:profile"))
-        self.assertContains(response, "suspended until")
-
-    def test_a_blocked_driver_cannot_switch_a_ride_back_on_or_offer_the_way_back(self):
-        self.client.force_login(self.driver)
-        self.client.post(reverse("rides:toggle", args=[self.ride.pk]))  # switch off while still allowed
-        suspend(self.driver)
-        self.client.post(reverse("rides:toggle", args=[self.ride.pk]))
-        self.ride.refresh_from_db()
-        self.assertFalse(self.ride.is_active)
-        self.client.post(reverse("rides:offer_back", args=[self.ride.pk]), {"return_time": "18:00"})
-        self.assertEqual(type(self.ride).objects.filter(driver=self.driver).count(), 1)
-
-    def test_every_page_shows_a_banner_for_a_blocked_person(self):
-        suspend(self.rider)
-        self.client.force_login(self.rider)
-        self.assertContains(self.client.get(reverse("bookings:trips")), "suspended until")
-
-    def test_an_unblocked_person_sees_no_banner(self):
-        self.client.force_login(self.rider)
-        self.assertNotContains(self.client.get(reverse("bookings:trips")), "suspended until")

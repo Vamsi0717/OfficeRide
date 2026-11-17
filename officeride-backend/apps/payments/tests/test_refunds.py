@@ -116,25 +116,6 @@ class RefundTroubleTests(Booked, TestCase):
         self.assertEqual((due.status, not_due.status), ("refunded", "paid"))
 
 
-@with_test_keys
-class RefundScreenTests(Booked, TestCase):
-    def test_the_trips_page_shows_refunded_after_a_cancel(self):
-        req, payment = paid_booking(self.ride, self.rider)
-        self.client.force_login(self.rider)
-        with fake_refunds():
-            self.client.post(reverse("bookings:act", args=[req.pk, "cancel"]))
-        page = self.client.get(reverse("bookings:trips"), {"view": "riding"})
-        self.assertContains(page, "Refunded")
-        self.assertContains(page, reverse("payments:receipt", args=[payment.pk]))
-
-    def test_the_receipt_of_a_refunded_payment_says_so(self):
-        req, payment = paid_booking(self.ride, self.rider)
-        with fake_refunds():
-            services.refund_payment(payment.pk)
-        self.client.force_login(self.rider)
-        self.assertContains(self.client.get(reverse("payments:receipt", args=[payment.pk])), "Payment refunded")
-
-
 @practice_mode
 class PracticeRefundTests(Booked, TestCase):
     def test_practice_mode_refunds_without_razorpay(self):

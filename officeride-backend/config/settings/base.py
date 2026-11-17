@@ -52,7 +52,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -91,7 +91,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Uploaded driver documents are private. MEDIA_URL is deliberately NOT set and the files are
 # never served publicly; only staff can open them through accounts:document_file.
@@ -99,9 +98,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DOCUMENT_MAX_MB = 5
 
 # Login and messages
-LOGIN_URL = "accounts:login"
-LOGIN_REDIRECT_URL = "accounts:profile"
-LOGOUT_REDIRECT_URL = "home"
+LOGIN_URL = "admin:login"
 MESSAGE_TAGS = {message_constants.ERROR: "danger"}
 
 # Company-email rules
