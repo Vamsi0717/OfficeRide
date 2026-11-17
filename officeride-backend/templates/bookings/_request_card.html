@@ -46,10 +46,13 @@
     {% endif %}
   </div>
 
-  {% if not as_driver and req.status == 'accepted' or not as_driver and req.status == 'completed' %}
+  {% if not as_driver %}
     {% if req.payment %}
-      <div class="or-actions"><span class="or-chip plain"><i class="bi bi-check-circle-fill text-success"></i> Paid</span>
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments:receipt' req.payment.pk %}"><i class="bi bi-receipt"></i> Receipt</a></div>
+      <div class="or-actions">
+        {% if req.payment.status == 'refunded' %}<span class="or-chip plain"><i class="bi bi-arrow-counterclockwise text-success"></i> Refunded &#8377;{{ req.payment.amount_rupees|floatformat:"-2" }}</span>
+        {% else %}<span class="or-chip plain"><i class="bi bi-check-circle-fill text-success"></i> Paid</span>{% endif %}
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'payments:receipt' req.payment.pk %}"><i class="bi bi-receipt"></i> Receipt</a>
+      </div>
     {% elif req.status == 'accepted' %}
       <div class="or-actions">
         <form method="post" action="{% url 'payments:pay' req.pk %}" class="m-0">{% csrf_token %}

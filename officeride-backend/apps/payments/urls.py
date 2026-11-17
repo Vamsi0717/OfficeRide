@@ -9,6 +9,7 @@ urlpatterns = [
     path("checkout/<int:pk>/", views.checkout, name="checkout"),
     path("practice/<int:pk>/", views.practice, name="practice"),
     path("confirm/", views.confirm, name="confirm"),
+    path("earnings/", views.earnings, name="earnings"),
     path("receipt/<int:pk>/", views.receipt, name="receipt"),
     path("webhook/", views.webhook, name="webhook"),
 ]

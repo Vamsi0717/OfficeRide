@@ -58,7 +58,9 @@ def trips(request):
     driving = list(base.filter(ride__driver=user)[:100])
     everything = riding + driving
     rated = set(Rating.objects.filter(rater=user, request__in=everything).values_list("request_id", flat=True))
-    paid = {p.request_id: p for p in Payment.objects.filter(request__in=riding, status=Payment.Status.PAID)}
+    paid = {}
+    for p in Payment.objects.filter(request__in=riding, status__in=[Payment.Status.PAID, Payment.Status.REFUNDED]).order_by("pk"):
+        paid[p.request_id] = p  # the newest one wins, so a booking that was refunded and paid again shows paid
     chat = chat_services.summary(user, [r.pk for r in everything])
     for reqs, other_is_driver in ((riding, True), (driving, False)):
         for req in reqs:

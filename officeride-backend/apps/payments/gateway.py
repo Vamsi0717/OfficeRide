@@ -38,6 +38,23 @@ def create_order(amount_paise, receipt):
     return order["id"]
 
 
+def refund(payment_id, amount_paise):
+    """Ask Razorpay to return money to the rider and return the refund id."""
+    if is_fake():
+        return f"rfnd_fake_{uuid.uuid4().hex[:14]}"
+    import razorpay
+
+    if not settings.RAZORPAY_KEY_ID or not settings.RAZORPAY_KEY_SECRET:
+        raise GatewayError("Payments are not set up yet.")
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+    try:
+        result = client.payment.refund(payment_id, {"amount": amount_paise})
+    except Exception as exc:
+        logger.warning("Razorpay refused the refund: %r", exc)
+        raise GatewayError("Razorpay did not accept the refund.") from exc
+    return result["id"]
+
+
 def _matches(secret, message, signature):
     if not secret or not signature:
         return False  # with no secret set, nothing can be trusted

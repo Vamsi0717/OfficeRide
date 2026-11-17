@@ -10,6 +10,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from apps.fares import services as fare_services
+from apps.payments import services as payment_services
 from apps.rides import matching
 from apps.rides.models import CarUnavailableDate, Ride
 from apps.trust import services as trust_services
@@ -174,6 +175,7 @@ def cancel(request_id, user):
         req.save(update_fields=["status", "cancelled_by", "late_cancel", "decided_at", "updated_at"])
         if req.late_cancel:
             trust_services.record_strike(user, Strike.Reason.LATE_CANCEL, req)
+        payment_services.refund_for_request(req)  # a paid booking is refunded; an unpaid one has nothing to refund
         return req
 
 
@@ -198,6 +200,7 @@ def report_no_show(request_id, user):
         # Whoever reports it, the strike goes to the other person: they are the one who did not show up.
         absent = req.ride.driver if user.id == req.rider_id else req.rider
         trust_services.record_strike(absent, Strike.Reason.NO_SHOW, req)
+        payment_services.refund_for_request(req)  # refunded only when the rider reported that the driver did not come
         return req
 
 

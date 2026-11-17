@@ -28,6 +28,13 @@
       <span class="or-grow">Rides I offer<small>Switch off, edit or delete your rides</small></span>
       <i class="bi bi-chevron-right text-muted"></i>
     </a>
+    {% if user.can_offer_rides %}
+    <a class="or-menu-row" href="{% url 'payments:earnings' %}">
+      <span class="or-ico"><i class="bi bi-wallet2"></i></span>
+      <span class="or-grow">My earnings<small>What riders have paid you, week by week</small></span>
+      <i class="bi bi-chevron-right text-muted"></i>
+    </a>
+    {% endif %}
     <a class="or-menu-row" href="{% url 'bookings:plan' %}">
       <span class="or-ico"><i class="bi bi-calendar-week"></i></span>
       <span class="or-grow">My week<small>Driving or riding, day by day</small></span>

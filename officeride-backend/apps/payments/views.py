@@ -72,6 +72,14 @@ def receipt(request, pk):
     return render(request, "payments/receipt.html", {"payment": payment})
 
 
+@email_verified_required
+def earnings(request):
+    """The driver's earnings: this week's total, the rides in it, earlier rides and what has been paid out."""
+    summary = services.earnings_summary(request.user)
+    settlements = request.user.settlements.all()[:12]
+    return render(request, "payments/earnings.html", {"summary": summary, "settlements": settlements})
+
+
 @csrf_exempt
 @require_POST
 def webhook(request):
