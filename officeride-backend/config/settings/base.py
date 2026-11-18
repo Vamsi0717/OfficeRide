@@ -1,6 +1,7 @@
 """Settings shared by every environment. Environment-specific values live in dev.py and prod.py."""
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.messages import constants as message_constants
@@ -25,7 +26,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
+    "rest_framework",
     "apps.accounts",
+    "apps.api",
     "apps.bookings",
     "apps.chat",
     "apps.core",
@@ -38,6 +42,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",  # first, so it can answer the browser's "may I?" question
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -162,3 +167,27 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
 # OfficeRide's own fee per ride, in paise. Zero during the pilot.
 PLATFORM_FEE_PAISE = int(os.getenv("PLATFORM_FEE_PAISE", "0"))
+
+# The API (Phase 9). The website (React) and the Android app talk to Django only through /api/v1/.
+# Which front-end addresses may call the API from a browser. The defaults are the React dev server (Vite) and
+# the Android app's built-in web page. In production this is set to your real website address.
+DEFAULT_FRONTEND_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost,https://localhost,capacitor://localhost"
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in (os.getenv("FRONTEND_ORIGINS") or DEFAULT_FRONTEND_ORIGINS).split(",") if o.strip()
+]
+
+REST_FRAMEWORK = {
+    # Logging in gives two tokens (see SIMPLE_JWT). The app sends the short one in a header: Authorization: Bearer <token>.
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework_simplejwt.authentication.JWTAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    # Answers are always JSON. There is no HTML "browsable API", so no templates or styles are needed.
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser", "rest_framework.parsers.MultiPartParser", "rest_framework.parsers.FormParser"],
+}
+API_AUTH_RATE = os.getenv("API_AUTH_RATE") or "30/min"  # register, login and resend-code, for each address
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
+    "ROTATE_REFRESH_TOKENS": True,  # every refresh gives a new refresh token, so an active person stays logged in
+}
